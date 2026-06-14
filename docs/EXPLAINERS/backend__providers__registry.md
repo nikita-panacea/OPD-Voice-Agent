@@ -13,7 +13,8 @@ detection + Krisp BVC. This is what makes "swap a provider = edit YAML" true.
 
 ## Walkthrough
 - **`STT_PROVIDERS` / `LLM_PROVIDERS` / `TTS_PROVIDERS`** — dicts of provider name → builder
-  singleton. POC registers only Sarvam (STT/TTS) and OpenAI (LLM).
+  singleton. Registered: STT = sarvam/deepgram/whisper; LLM = openai/google; TTS =
+  sarvam/elevenlabs — covering all comparison pipelines in `pipelines.yaml`.
 - **`BuiltSession`** — dataclass returned to the worker: the `AgentSession`, the per-stage
   `meters` dict, the `noise_cancellation` component, and the resolved `pipeline`/`language`.
 - **`_resolve(table, stage_cfg, stage)`** — looks up a stage's provider; raises a descriptive

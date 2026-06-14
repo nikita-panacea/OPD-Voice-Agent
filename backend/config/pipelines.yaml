@@ -1,25 +1,25 @@
 # pipelines.yaml — named STT/LLM/TTS triples ("a pipeline is a named triple").
 #
-# Switching pipelines is a CONFIG change, not a code change (CLAUDE.md §6). Each stage
-# names a provider (matches a builder in providers/registry.py) + a model + options.
-# The `pricing_key` on each stage maps to an entry in pricing.yaml for cost attribution.
+# Switching pipelines is a CONFIG change, not a code change (CLAUDE.md §6). Each stage names a
+# provider (matches a builder in providers/registry.py) + a model + options. The `pricing_key`
+# on each stage maps to an entry in pricing.yaml for cost attribution.
 #
-# POC: only `indic_quality` is active (ACTIVE_PIPELINE in .env). The others are listed
-# so they can be enabled later WITHOUT code churn — their provider wrappers are the only
-# missing piece (deferred per the POC plan).
+# To run a different pipeline live: set ACTIVE_PIPELINE in .env (e.g. ACTIVE_PIPELINE=low_cost),
+# restart the agent worker, run a session. Telemetry rows are tagged with the pipeline, so
+# `telemetry/compare.py` (and GET /api/compare) can compare cost vs latency/completion across
+# pipelines from real sessions.
 
 active_default: indic_quality
 
 pipelines:
-  # ---- POC default: best Indic + code-mix quality -------------------------------
+  # ---- Best Indic + code-mix quality (POC default) ------------------------------
   indic_quality:
-    description: "Sarvam Saaras v3 STT -> GPT-4.1 -> Sarvam Bulbul TTS (POC live pipeline)"
+    description: "Sarvam Saaras v3 STT -> GPT-4.1 -> Sarvam Bulbul TTS"
     stt:
       provider: sarvam
       model: "saaras:v3"
       pricing_key: "sarvam/saaras:v3"
-      options:
-        mode: "transcribe"        # "translate" available on saaras:v3 (translate_bridge strategy)
+      options: { mode: "transcribe" }
     llm:
       provider: openai
       model: "gpt-4.1"
@@ -31,24 +31,98 @@ pipelines:
       pricing_key: "sarvam/bulbul:v2"
       options: {}
 
-  # ---- Deferred (wrappers not built in POC; registry will accept them later) -----
+  # ---- Global stack: Deepgram + GPT-4.1 + ElevenLabs ----------------------------
   global_stack:
-    description: "Deepgram Nova-3 -> GPT-4.1 -> ElevenLabs (DEFERRED)"
-    enabled: false
-    stt: { provider: deepgram, model: "nova-3", pricing_key: "deepgram/nova-3", options: {} }
-    llm: { provider: openai, model: "gpt-4.1", pricing_key: "openai/gpt-4.1", options: {} }
-    tts: { provider: elevenlabs, model: "flash-v2.5", pricing_key: "elevenlabs/flash-v2.5", options: {} }
+    description: "Deepgram Nova-3 -> GPT-4.1 -> ElevenLabs Flash v2.5"
+    stt:
+      provider: deepgram
+      model: "nova-3"
+      pricing_key: "deepgram/nova-3"
+      options: {}                 # set options.language: "multi" for code-switch
+    llm:
+      provider: openai
+      model: "gpt-4.1"
+      pricing_key: "openai/gpt-4.1"
+      options: {}
+    tts:
+      provider: elevenlabs
+      model: "eleven_flash_v2_5"
+      pricing_key: "elevenlabs/flash-v2.5"
+      options: {}
 
+  # ---- Low cost: Deepgram + Gemini Flash-Lite + Sarvam Bulbul --------------------
   low_cost:
-    description: "Deepgram Nova-3 -> Gemini 2.5 Flash-Lite -> Sarvam Bulbul (DEFERRED)"
-    enabled: false
-    stt: { provider: deepgram, model: "nova-3", pricing_key: "deepgram/nova-3", options: {} }
-    llm: { provider: google, model: "gemini-2.5-flash-lite", pricing_key: "google/gemini-2.5-flash-lite", options: {} }
-    tts: { provider: sarvam, model: "bulbul:v2", pricing_key: "sarvam/bulbul:v2", options: {} }
+    description: "Deepgram Nova-3 -> Gemini 2.5 Flash-Lite -> Sarvam Bulbul"
+    stt:
+      provider: deepgram
+      model: "nova-3"
+      pricing_key: "deepgram/nova-3"
+      options: {}
+    llm:
+      provider: google
+      model: "gemini-2.5-flash-lite"
+      pricing_key: "google/gemini-2.5-flash-lite"
+      options: {}
+    tts:
+      provider: sarvam
+      model: "bulbul:v2"
+      pricing_key: "sarvam/bulbul:v2"
+      options: {}
 
+  # ---- Translate bridge: Saaras translate -> English LLM -> Bulbul (strategy flag) -
   translate_bridge:
-    description: "Sarvam Saaras v3 (mode=translate -> English) -> English LLM -> TTS (DEFERRED, strategy flag)"
-    enabled: false
-    stt: { provider: sarvam, model: "saaras:v3", pricing_key: "sarvam/saaras:v3", options: { mode: "translate" } }
-    llm: { provider: openai, model: "gpt-4.1-mini", pricing_key: "openai/gpt-4.1-mini", options: {} }
-    tts: { provider: sarvam, model: "bulbul:v2", pricing_key: "sarvam/bulbul:v2", options: {} }
+    description: "Sarvam Saaras v3 (mode=translate -> English) -> GPT-4.1-mini -> Sarvam Bulbul"
+    stt:
+      provider: sarvam
+      model: "saaras:v3"
+      pricing_key: "sarvam/saaras:v3"
+      options: { mode: "translate" }
+    llm:
+      provider: openai
+      model: "gpt-4.1-mini"
+      pricing_key: "openai/gpt-4.1-mini"
+      options: {}
+    tts:
+      provider: sarvam
+      model: "bulbul:v2"
+      pricing_key: "sarvam/bulbul:v2"
+      options: {}
+
+  # ---- Global quality: Deepgram + Gemini 2.5 Flash + ElevenLabs -----------------
+  global_quality:
+    description: "Deepgram Nova-3 -> Gemini 2.5 Flash -> ElevenLabs Flash v2.5"
+    stt:
+      provider: deepgram
+      model: "nova-3"
+      pricing_key: "deepgram/nova-3"
+      options: {}
+    llm:
+      provider: google
+      model: "gemini-2.5-flash"
+      pricing_key: "google/gemini-2.5-flash"
+      options: {}
+    tts:
+      provider: elevenlabs
+      model: "eleven_flash_v2_5"
+      pricing_key: "elevenlabs/flash-v2.5"
+      options: {}
+
+  # ---- Whisper eval baseline: OpenAI STT -> GPT-4.1-mini -> Sarvam Bulbul --------
+  # whisper-1 is batch-oriented (eval baseline); gpt-4o-mini-transcribe streams for live use.
+  whisper_eval:
+    description: "OpenAI transcribe -> GPT-4.1-mini -> Sarvam Bulbul (eval baseline)"
+    stt:
+      provider: whisper
+      model: "gpt-4o-mini-transcribe"
+      pricing_key: "openai/gpt-4o-mini-transcribe"
+      options: {}
+    llm:
+      provider: openai
+      model: "gpt-4.1-mini"
+      pricing_key: "openai/gpt-4.1-mini"
+      options: {}
+    tts:
+      provider: sarvam
+      model: "bulbul:v2"
+      pricing_key: "sarvam/bulbul:v2"
+      options: {}

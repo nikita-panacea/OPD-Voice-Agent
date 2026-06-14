@@ -21,11 +21,24 @@ stt:
     usd_per_second: 0.000092        # ~ ₹30/hr
     as_of: "2026-06-14"
     source: "https://www.sarvam.ai/api-pricing"
-  # Deepgram Nova-3 (deferred pipelines). Multilingual tier.
+  # Deepgram Nova-3 (global_stack / low_cost / global_quality). Multilingual tier.
   "deepgram/nova-3":
     usd_per_second: 0.0001533       # $0.0092/min (drift: CLAUDE.md said ~$0.0077/min)
     as_of: "2026-06-14"
     source: "https://deepgram.com/pricing"
+  # OpenAI transcription (whisper_eval pipeline / eval baseline).
+  "openai/gpt-4o-mini-transcribe":
+    usd_per_second: 0.00005         # $0.003/min
+    as_of: "2026-06-14"
+    source: "OpenAI 2026 transcription pricing"
+  "openai/gpt-4o-transcribe":
+    usd_per_second: 0.0001          # $0.006/min
+    as_of: "2026-06-14"
+    source: "OpenAI 2026 transcription pricing"
+  "openai/whisper-1":
+    usd_per_second: 0.0001          # $0.006/min (batch-oriented eval baseline)
+    as_of: "2026-06-14"
+    source: "OpenAI 2026 Whisper pricing"
 
 llm:
   # OpenAI GPT-4.1 — POC default intake brain (best tool-calling for save_intake_field).
@@ -68,10 +81,11 @@ tts:
     usd_per_character: 0.0000165     # ~ ₹15 / 10K chars
     as_of: "2026-06-14"
     source: "https://www.sarvam.ai/api-pricing"
-  # ElevenLabs Flash v2.5 (deferred). 0.5 credits/char; credit->USD depends on plan.
-  # TODO: derive exact usd_per_character from the account's plan before use.
+  # ElevenLabs Flash v2.5 (global_stack / global_quality). Flash = 0.5 credits/char;
+  # credit->USD is plan-dependent. ~$0.05-0.12 per 1000 chars across plans/resellers.
+  # ESTIMATE below ($0.06/1000 chars); replace with your plan's exact $/char before costing.
   "elevenlabs/flash-v2.5":
-    usd_per_character: null
+    usd_per_character: 0.00006      # ESTIMATE: ~$0.06 / 1000 chars (plan-dependent)
     credits_per_character: 0.5
     as_of: "2026-06-14"
-    source: "ElevenLabs 2026 pricing pages"
+    source: "ElevenLabs 2026 pricing pages (Flash ~$0.05-0.12/1K chars)"

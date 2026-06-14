@@ -30,6 +30,9 @@ docs/       ARCHITECTURE.md, DECISIONS.md, and EXPLAINERS/ (one companion .md pe
 
 ## Setup
 
+> 📘 **Full step-by-step runbook (keys, env, run, verify, troubleshoot):**
+> [docs/SETUP_AND_RUN.md](docs/SETUP_AND_RUN.md). The quick version is below.
+
 ### 1. Backend (Python 3.11+)
 
 ```bash
@@ -69,6 +72,10 @@ cd backend && pytest
 1. **Smoothness** — natural turn-taking (Silero VAD + multilingual turn detector), patient
    handling of pauses, and re-explaining a question in simpler words with an example when the
    patient is confused.
-2. **Cost & performance** — per-turn token/character/audio counts, per-component cost, and
-   end-to-end latency are logged for the active pipeline (the foundation for the deferred
-   multi-pipeline cost-vs-smoothness comparison).
+2. **Cost & performance comparison** — per-turn token/character/audio counts, per-component
+   cost, and end-to-end latency are logged per pipeline. Six provider pipelines ship
+   (`indic_quality`, `global_stack`, `low_cost`, `global_quality`, `translate_bridge`,
+   `whisper_eval`) across Sarvam / OpenAI / Deepgram / ElevenLabs / Google / Whisper; switch
+   with `ACTIVE_PIPELINE` and compare median cost/intake + p50/p95 latency + completion via
+   `python -m telemetry.compare` or `GET /api/compare`. See
+   [docs/SETUP_AND_RUN.md §7A](docs/SETUP_AND_RUN.md).

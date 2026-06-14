@@ -11,7 +11,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from api import sessions, tokens
+from api import dashboard, sessions, tokens
 from logging_setup import configure_logging, get_logger
 from store.db import init_db
 
@@ -40,6 +40,7 @@ app.add_middleware(
 
 app.include_router(tokens.router)
 app.include_router(sessions.router)
+app.include_router(dashboard.router)
 
 
 @app.get("/health")

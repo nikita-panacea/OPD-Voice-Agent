@@ -48,6 +48,26 @@ component library shift between versions and we can't run the live loop in this 
 plain CSS. This keeps the POC robust and easy to follow. Swapping to components-react/Tailwind
 later is contained to the `frontend/src` layer.
 
+## ADR-0009 — All comparison providers added; pipeline cost/perf comparison enabled
+
+**Status:** accepted (2026-06-14). Supersedes the "single-pipeline first" scope of ADR-0001 for
+providers.
+**Context:** Cost-vs-smoothness comparison across provider combinations is a first-class POC
+goal (CLAUDE.md §1/§5/§9). The initial pass shipped one pipeline; the abstraction was built to
+make adding the rest cheap.
+**Decision:** Added wrappers for **Deepgram** (STT), **ElevenLabs** (TTS), **Google/Gemini**
+(LLM), and **OpenAI/Whisper** (STT, eval), registered them, and enabled six pipelines in
+`pipelines.yaml` (`indic_quality`, `global_stack`, `low_cost`, `translate_bridge`,
+`global_quality`, `whisper_eval`). Added `telemetry/compare.py` + `GET /api/compare` +
+`python -m telemetry.compare` to aggregate **median cost/intake, p50/p95 latency, completion**
+per pipeline from real sessions. Verified prices (2026-06-14): OpenAI STT $0.003–0.006/min;
+ElevenLabs Flash ≈ $0.05–0.12/1K chars (estimate stored, plan-dependent).
+**Verified at build:** all four plugins install at 1.6.0; constructors match the wrappers;
+ElevenLabs reads `ELEVEN_API_KEY` so the wrapper injects `ELEVENLABS_API_KEY` explicitly.
+**Still deferred:** the offline **replay harness** (identical-input bake-off, §9.5), the React
+**scatter dashboard**, and the weighted **smoothness composite** — `compare.py`/`/api/compare`
+is their data source. To compare now: set `ACTIVE_PIPELINE`, run sessions, read `/api/compare`.
+
 ## ADR-0007 — Report is built deterministically (no LLM narrative) in the POC
 
 **Status:** accepted (2026-06-14).

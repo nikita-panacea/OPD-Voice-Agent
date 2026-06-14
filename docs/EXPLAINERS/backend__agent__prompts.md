@@ -10,7 +10,7 @@ checklist. The guardrails appear here AND as code paths (consent gate + tools + 
 - **In:** language code. **Out:** the full instruction string + a greeting instruction.
 
 ## Walkthrough
-- **`PERSONA`** — "Asha", warm automated OPD assistant; short, plain, patient.
+- **`PERSONA`** — "Dhara", warm automated OPD assistant; short, plain, patient.
 - **`GUARDRAILS`** — the absolute rules: not a doctor, no diagnosis/advice, red-flag → stop +
   `flag_urgent`, consent first, brevity.
 - **`CONSENT_SCRIPT`** — per-language consent framing (en/hi).

@@ -14,13 +14,18 @@ walkthrough). A file is not "done" until its explainer exists and matches the co
 - [backend/store/db.py](backend__store__db.md) — SQLite engine, ORM models, session scope
 - [backend/logging_setup.py](backend__logging_setup.md) — structlog configuration
 
-### providers (Phase B)
+### providers (Phase B + comparison set)
 - [backend/providers/base.py](backend__providers__base.md) — Protocols, meter, StageBuild
 - [backend/providers/registry.py](backend__providers__registry.md) — factory / build_session
 - [backend/providers/stt_sarvam.py](backend__providers__stt_sarvam.md) — Sarvam Saaras STT
+- [backend/providers/stt_deepgram.py](backend__providers__stt_deepgram.md) — Deepgram Nova-3 STT
+- [backend/providers/stt_whisper.py](backend__providers__stt_whisper.md) — OpenAI/Whisper STT (eval)
 - [backend/providers/llm_openai.py](backend__providers__llm_openai.md) — OpenAI LLM
+- [backend/providers/llm_gemini.py](backend__providers__llm_gemini.md) — Google Gemini LLM
 - [backend/providers/tts_sarvam.py](backend__providers__tts_sarvam.md) — Sarvam Bulbul TTS
+- [backend/providers/tts_elevenlabs.py](backend__providers__tts_elevenlabs.md) — ElevenLabs TTS
 - [backend/tests/test_meter.py](backend__providers__base.md) — meter unit tests (see base explainer)
+- [backend/tests/test_registry.py](backend__providers__registry.md) — registry + pipeline-resolve tests
 
 ### agent + api + frontend (Phase C)
 - [backend/agent/worker.py](backend__agent__worker.md) — LiveKit worker entrypoint
@@ -47,12 +52,15 @@ walkthrough). A file is not "done" until its explainer exists and matches the co
 - [backend/tests/test_red_flags.py](backend__intake__red_flags.md) — red-flag + consent-gate tests
 - (consent gate + handoff live in [intake_agent.py](backend__agent__intake_agent.md))
 
-### telemetry (Phase F)
+### telemetry (Phase F + comparison)
 - [backend/telemetry/events.py](backend__telemetry__events.md) — per-turn telemetry record
 - [backend/telemetry/cost.py](backend__telemetry__cost.md) — cost math from pricing.yaml
 - [backend/telemetry/meter.py](backend__telemetry__meter.md) — metrics → costed rows
+- [backend/telemetry/compare.py](backend__telemetry__compare.md) — cost-vs-performance aggregation
+- [backend/api/dashboard.py](backend__api__dashboard.md) — /api/compare endpoints
 - [backend/tests/test_cost.py](backend__telemetry__cost.md) — cost-math tests
 - [backend/tests/test_telemetry.py](backend__telemetry__meter.md) — meter routing tests
+- [backend/tests/test_compare.py](backend__telemetry__compare.md) — comparison aggregation tests
 
 ### report (Phase G)
 - [backend/intake/report.py](backend__intake__report.md) — structured report + Markdown

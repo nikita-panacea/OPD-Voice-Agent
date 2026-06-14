@@ -1,3 +1,7 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "opd-intelligence-backend"
 version = "0.1.0"
@@ -7,9 +11,13 @@ dependencies = [
     # LiveKit Agents 1.6.x (verified 2026-06-14: latest 1.6.0, released 2026-06-11).
     # Use ~=1.6 (CLAUDE.md said ~=1.0 — that is stale).
     "livekit-agents[silero,turn-detector]~=1.6",
-    # POC pipeline plugins (indic_quality = Sarvam STT/TTS + OpenAI LLM) + Krisp.
+    # Pipeline plugins for the provider/cost comparison (Sarvam, OpenAI, Deepgram,
+    # ElevenLabs, Google/Gemini) + Krisp noise cancellation.
     "livekit-plugins-sarvam",
     "livekit-plugins-openai",
+    "livekit-plugins-deepgram",
+    "livekit-plugins-elevenlabs",
+    "livekit-plugins-google",
     "livekit-plugins-noise-cancellation",
     "livekit-api",          # LiveKit access-token minting for the browser client
     # API + config + storage
@@ -24,18 +32,18 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-# Deferred pipelines (global_stack / low_cost / translate_bridge). Not installed for the POC.
-deferred = [
-    "livekit-plugins-google",
-    "livekit-plugins-deepgram",
-    "livekit-plugins-elevenlabs",
-]
 dev = [
     "pytest",
     "pytest-asyncio",
     "ruff",
     "black",
 ]
+
+[tool.setuptools]
+# Flat layout: backend/ is the import root. List packages explicitly so editable installs
+# don't trip setuptools auto-discovery (multiple top-level packages).
+packages = ["config", "agent", "intake", "providers", "telemetry", "store", "api"]
+py-modules = ["logging_setup"]
 
 [tool.black]
 line-length = 100

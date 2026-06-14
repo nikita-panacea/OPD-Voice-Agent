@@ -5,9 +5,9 @@ STT/LLM/TTS components + Silero VAD + MultilingualModel turn detection + Krisp B
 cancellation. Switching pipelines/providers is a config change (pipelines.yaml), not a code
 change.
 
-POC registers only the `indic_quality` trio (Sarvam STT/TTS + OpenAI LLM). Deferred providers
-(deepgram/elevenlabs/google) are intentionally unregistered — naming one in a pipeline fails
-fast with a clear error.
+All comparison providers are registered: STT (Sarvam, Deepgram, Whisper/OpenAI), LLM (OpenAI,
+Google/Gemini), TTS (Sarvam, ElevenLabs). A pipeline naming an unregistered provider fails fast
+with a clear error.
 """
 
 from __future__ import annotations
@@ -17,15 +17,33 @@ from typing import Any
 
 from config.settings import get_pipeline
 from logging_setup import get_logger
-from providers import llm_openai, stt_sarvam, tts_sarvam
+from providers import (
+    llm_gemini,
+    llm_openai,
+    stt_deepgram,
+    stt_sarvam,
+    stt_whisper,
+    tts_elevenlabs,
+    tts_sarvam,
+)
 from providers.base import LLMProvider, ProviderMeter, STTProvider, TTSProvider
 
 log = get_logger(__name__)
 
 # name -> builder. Separate tables per stage (a provider may serve >1 stage, e.g. Sarvam).
-STT_PROVIDERS: dict[str, STTProvider] = {stt_sarvam.PROVIDER.name: stt_sarvam.PROVIDER}
-LLM_PROVIDERS: dict[str, LLMProvider] = {llm_openai.PROVIDER.name: llm_openai.PROVIDER}
-TTS_PROVIDERS: dict[str, TTSProvider] = {tts_sarvam.PROVIDER.name: tts_sarvam.PROVIDER}
+STT_PROVIDERS: dict[str, STTProvider] = {
+    stt_sarvam.PROVIDER.name: stt_sarvam.PROVIDER,
+    stt_deepgram.PROVIDER.name: stt_deepgram.PROVIDER,
+    stt_whisper.PROVIDER.name: stt_whisper.PROVIDER,
+}
+LLM_PROVIDERS: dict[str, LLMProvider] = {
+    llm_openai.PROVIDER.name: llm_openai.PROVIDER,
+    llm_gemini.PROVIDER.name: llm_gemini.PROVIDER,
+}
+TTS_PROVIDERS: dict[str, TTSProvider] = {
+    tts_sarvam.PROVIDER.name: tts_sarvam.PROVIDER,
+    tts_elevenlabs.PROVIDER.name: tts_elevenlabs.PROVIDER,
+}
 
 
 @dataclass
