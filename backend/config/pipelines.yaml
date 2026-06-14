@@ -1,0 +1,54 @@
+# pipelines.yaml — named STT/LLM/TTS triples ("a pipeline is a named triple").
+#
+# Switching pipelines is a CONFIG change, not a code change (CLAUDE.md §6). Each stage
+# names a provider (matches a builder in providers/registry.py) + a model + options.
+# The `pricing_key` on each stage maps to an entry in pricing.yaml for cost attribution.
+#
+# POC: only `indic_quality` is active (ACTIVE_PIPELINE in .env). The others are listed
+# so they can be enabled later WITHOUT code churn — their provider wrappers are the only
+# missing piece (deferred per the POC plan).
+
+active_default: indic_quality
+
+pipelines:
+  # ---- POC default: best Indic + code-mix quality -------------------------------
+  indic_quality:
+    description: "Sarvam Saaras v3 STT -> GPT-4.1 -> Sarvam Bulbul TTS (POC live pipeline)"
+    stt:
+      provider: sarvam
+      model: "saaras:v3"
+      pricing_key: "sarvam/saaras:v3"
+      options:
+        mode: "transcribe"        # "translate" available on saaras:v3 (translate_bridge strategy)
+    llm:
+      provider: openai
+      model: "gpt-4.1"
+      pricing_key: "openai/gpt-4.1"
+      options: {}
+    tts:
+      provider: sarvam
+      model: "bulbul:v2"
+      pricing_key: "sarvam/bulbul:v2"
+      options: {}
+
+  # ---- Deferred (wrappers not built in POC; registry will accept them later) -----
+  global_stack:
+    description: "Deepgram Nova-3 -> GPT-4.1 -> ElevenLabs (DEFERRED)"
+    enabled: false
+    stt: { provider: deepgram, model: "nova-3", pricing_key: "deepgram/nova-3", options: {} }
+    llm: { provider: openai, model: "gpt-4.1", pricing_key: "openai/gpt-4.1", options: {} }
+    tts: { provider: elevenlabs, model: "flash-v2.5", pricing_key: "elevenlabs/flash-v2.5", options: {} }
+
+  low_cost:
+    description: "Deepgram Nova-3 -> Gemini 2.5 Flash-Lite -> Sarvam Bulbul (DEFERRED)"
+    enabled: false
+    stt: { provider: deepgram, model: "nova-3", pricing_key: "deepgram/nova-3", options: {} }
+    llm: { provider: google, model: "gemini-2.5-flash-lite", pricing_key: "google/gemini-2.5-flash-lite", options: {} }
+    tts: { provider: sarvam, model: "bulbul:v2", pricing_key: "sarvam/bulbul:v2", options: {} }
+
+  translate_bridge:
+    description: "Sarvam Saaras v3 (mode=translate -> English) -> English LLM -> TTS (DEFERRED, strategy flag)"
+    enabled: false
+    stt: { provider: sarvam, model: "saaras:v3", pricing_key: "sarvam/saaras:v3", options: { mode: "translate" } }
+    llm: { provider: openai, model: "gpt-4.1-mini", pricing_key: "openai/gpt-4.1-mini", options: {} }
+    tts: { provider: sarvam, model: "bulbul:v2", pricing_key: "sarvam/bulbul:v2", options: {} }

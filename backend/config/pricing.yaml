@@ -1,0 +1,77 @@
+# pricing.yaml — dated unit prices per provider/model.
+#
+# WHY DATA-DRIVEN: cost math (telemetry/cost.py) reads this file so updating a price
+# never touches code, and every historical session can be re-costed against the price
+# set that was live at the time. Each entry carries `as_of` + `source` for auditability.
+#
+# ALL PRICES IN USD. Verified 2026-06-14 via web search (see docs/DECISIONS.md).
+# Units:
+#   stt  -> usd_per_second        (audio seconds processed)
+#   llm  -> usd_per_1m_input / usd_per_1m_output  (tokens)
+#   tts  -> usd_per_character
+#
+# Treat these as starting defaults; re-verify before any real cost comparison (CLAUDE.md §15).
+
+version: 1
+currency: USD
+
+stt:
+  # Sarvam Saaras v3 — POC default STT.
+  "sarvam/saaras:v3":
+    usd_per_second: 0.000092        # ~ ₹30/hr
+    as_of: "2026-06-14"
+    source: "https://www.sarvam.ai/api-pricing"
+  # Deepgram Nova-3 (deferred pipelines). Multilingual tier.
+  "deepgram/nova-3":
+    usd_per_second: 0.0001533       # $0.0092/min (drift: CLAUDE.md said ~$0.0077/min)
+    as_of: "2026-06-14"
+    source: "https://deepgram.com/pricing"
+
+llm:
+  # OpenAI GPT-4.1 — POC default intake brain (best tool-calling for save_intake_field).
+  "openai/gpt-4.1":
+    usd_per_1m_input: 2.00
+    usd_per_1m_output: 8.00
+    as_of: "2026-06-14"
+    source: "OpenAI 2026 pricing trackers (cloudzero, costbench)"
+  "openai/gpt-4.1-mini":
+    usd_per_1m_input: 0.40
+    usd_per_1m_output: 1.60
+    as_of: "2026-06-14"
+    source: "OpenAI 2026 pricing trackers"
+  "openai/gpt-4.1-nano":
+    usd_per_1m_input: 0.10
+    usd_per_1m_output: 0.40
+    as_of: "2026-06-14"
+    source: "OpenAI 2026 pricing trackers"
+  # Gemini (config-swap alternative brain).
+  "google/gemini-2.5-flash":
+    usd_per_1m_input: 0.30
+    usd_per_1m_output: 2.50
+    as_of: "2026-06-14"
+    source: "https://ai.google.dev/gemini-api/docs/pricing"
+  "google/gemini-2.5-flash-lite":
+    usd_per_1m_input: 0.10
+    usd_per_1m_output: 0.40
+    as_of: "2026-06-14"
+    source: "https://ai.google.dev/gemini-api/docs/pricing"
+  # Sarvam LLM — price not confirmed at plan time (TODO: verify before use; not on POC path).
+  "sarvam/sarvam-30b":
+    usd_per_1m_input: null
+    usd_per_1m_output: null
+    as_of: "2026-06-14"
+    source: "TODO: verify on https://www.sarvam.ai/api-pricing"
+
+tts:
+  # Sarvam Bulbul — POC default TTS.
+  "sarvam/bulbul:v2":
+    usd_per_character: 0.0000165     # ~ ₹15 / 10K chars
+    as_of: "2026-06-14"
+    source: "https://www.sarvam.ai/api-pricing"
+  # ElevenLabs Flash v2.5 (deferred). 0.5 credits/char; credit->USD depends on plan.
+  # TODO: derive exact usd_per_character from the account's plan before use.
+  "elevenlabs/flash-v2.5":
+    usd_per_character: null
+    credits_per_character: 0.5
+    as_of: "2026-06-14"
+    source: "ElevenLabs 2026 pricing pages"

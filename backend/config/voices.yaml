@@ -1,0 +1,22 @@
+# voices.yaml — per-language TTS voice IDs (one voice per language; CLAUDE.md §7).
+#
+# The agent always replies in the patient's language with a language-matched voice.
+# POC covers en + hi (Marathi deferred — turn-detector has no Marathi support, see plan §3).
+#
+# NOTE: Sarvam Bulbul speaker IDs can change between model versions. Verify the exact
+# speaker names against `sarvam.TTS` / the Sarvam docs at build time (Risk R5). The
+# registry passes voices[language] into the TTS wrapper; an unknown language falls back
+# to `default`.
+
+provider: sarvam
+model: "bulbul:v2"
+
+voices:
+  en:
+    speaker: "anushka"      # verify available speaker for bulbul:v2
+  hi:
+    speaker: "anushka"      # Bulbul voices are multilingual across Indic + English
+  # mr: deferred (post-POC)
+
+default:
+  speaker: "anushka"

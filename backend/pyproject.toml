@@ -1,0 +1,59 @@
+[project]
+name = "opd-intelligence-backend"
+version = "0.1.0"
+description = "Voice-to-voice OPD patient intake agent (POC) — LiveKit cascade pipeline"
+requires-python = ">=3.11"
+dependencies = [
+    # LiveKit Agents 1.6.x (verified 2026-06-14: latest 1.6.0, released 2026-06-11).
+    # Use ~=1.6 (CLAUDE.md said ~=1.0 — that is stale).
+    "livekit-agents[silero,turn-detector]~=1.6",
+    # POC pipeline plugins (indic_quality = Sarvam STT/TTS + OpenAI LLM) + Krisp.
+    "livekit-plugins-sarvam",
+    "livekit-plugins-openai",
+    "livekit-plugins-noise-cancellation",
+    "livekit-api",          # LiveKit access-token minting for the browser client
+    # API + config + storage
+    "fastapi",
+    "uvicorn[standard]",
+    "pydantic>=2",
+    "pydantic-settings>=2",
+    "structlog",
+    "pyyaml",
+    "python-dotenv",
+    "sqlalchemy>=2",
+]
+
+[project.optional-dependencies]
+# Deferred pipelines (global_stack / low_cost / translate_bridge). Not installed for the POC.
+deferred = [
+    "livekit-plugins-google",
+    "livekit-plugins-deepgram",
+    "livekit-plugins-elevenlabs",
+]
+dev = [
+    "pytest",
+    "pytest-asyncio",
+    "ruff",
+    "black",
+]
+
+[tool.black]
+line-length = 100
+target-version = ["py311"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+
+[tool.ruff.lint.per-file-ignores]
+# Bilingual prompt strings are intentionally long natural-language literals.
+"intake/questions.py" = ["E501"]
+# Hindi prompt strings in the prompt builder are likewise long literals.
+"agent/prompts.py" = ["E501"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
