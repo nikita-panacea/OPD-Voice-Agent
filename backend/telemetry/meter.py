@@ -64,7 +64,10 @@ class SessionMeter:
             self._cur.llm_output_tokens += units.llm_output_tokens
             self._cur.llm_cached_tokens += units.llm_cached_tokens
             self._cur.llm_cost += cost.llm_cost(
-                units.llm_input_tokens, units.llm_output_tokens, self.meters["llm"].pricing_key
+                units.llm_input_tokens,
+                units.llm_output_tokens,
+                self.meters["llm"].pricing_key,
+                cached_tokens=units.llm_cached_tokens,
             )
             if self._cur.llm_ttft_ms is None:
                 self._cur.llm_ttft_ms = _ms(getattr(metric, "ttft", None))

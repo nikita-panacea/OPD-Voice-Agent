@@ -126,3 +126,59 @@ pipelines:
       model: "bulbul:v2"
       pricing_key: "sarvam/bulbul:v2"
       options: {}
+
+  # ---- Whisper STT + Sarvam TTS, one per LLM (the cost-comparison combos) --------
+  # whisper-1 is batch-oriented; swap STT model to gpt-4o-mini-transcribe for live streaming.
+  whisper_sarvam_nano:
+    description: "Whisper STT -> GPT-4.1-nano -> Sarvam Bulbul"
+    stt:
+      provider: whisper
+      model: "whisper-1"
+      pricing_key: "openai/whisper-1"
+      options: {}
+    llm:
+      provider: openai
+      model: "gpt-4.1-nano"
+      pricing_key: "openai/gpt-4.1-nano"
+      options: {}
+    tts:
+      provider: sarvam
+      model: "bulbul:v2"
+      pricing_key: "sarvam/bulbul:v2"
+      options: {}
+
+  whisper_sarvam_mini:
+    description: "Whisper STT -> GPT-4.1-mini -> Sarvam Bulbul"
+    stt:
+      provider: whisper
+      model: "whisper-1"
+      pricing_key: "openai/whisper-1"
+      options: {}
+    llm:
+      provider: openai
+      model: "gpt-4.1-mini"
+      pricing_key: "openai/gpt-4.1-mini"
+      options: {}
+    tts:
+      provider: sarvam
+      model: "bulbul:v2"
+      pricing_key: "sarvam/bulbul:v2"
+      options: {}
+
+  whisper_sarvam_gemini:
+    description: "Whisper STT -> Gemini 2.5 Flash -> Sarvam Bulbul"
+    stt:
+      provider: whisper
+      model: "whisper-1"
+      pricing_key: "openai/whisper-1"
+      options: {}
+    llm:
+      provider: google
+      model: "gemini-2.5-flash"
+      pricing_key: "google/gemini-2.5-flash"
+      options: {}
+    tts:
+      provider: sarvam
+      model: "bulbul:v2"
+      pricing_key: "sarvam/bulbul:v2"
+      options: {}

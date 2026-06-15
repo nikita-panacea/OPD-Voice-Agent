@@ -20,16 +20,20 @@ module (not the agent script), and it downloads files for all installed plugins.
 
 from __future__ import annotations
 
+from dotenv import load_dotenv
 from livekit.agents import AgentServer, JobContext, RoomInputOptions, cli
 
 from agent.intake_agent import IntakeAgent
-from agent.prompts import greeting_instructions
-from config.settings import get_settings
+from config.settings import ENV_FILE, get_settings
 from intake.state import IntakeState
 from logging_setup import configure_logging, get_logger
 from providers.registry import build_session
 from telemetry.meter import SessionMeter
 
+# Load the project-root .env into os.environ. The LiveKit SDK (AgentServer reads LIVEKIT_URL/
+# API_KEY/API_SECRET) and the provider plugins (OPENAI_API_KEY / SARVAM_API_KEY / DEEPGRAM_API_KEY
+# / GOOGLE_API_KEY) read os.environ directly — pydantic-settings alone does not populate it.
+load_dotenv(ENV_FILE)
 configure_logging()
 log = get_logger("agent.worker")
 
@@ -56,11 +60,13 @@ async def entrypoint(ctx: JobContext) -> None:
     await ctx.connect()
     settings = get_settings()
 
+    log.info("agent_connected_waiting_for_participant", room=ctx.room.name)
     participant = await ctx.wait_for_participant()
     language = _resolve_language(participant)
     log.info(
         "session_starting",
         room=ctx.room.name,
+        participant=participant.identity,
         language=language,
         pipeline=settings.active_pipeline,
     )
@@ -91,9 +97,8 @@ async def entrypoint(ctx: JobContext) -> None:
     ctx.add_shutdown_callback(_flush_telemetry)
 
     await built.session.start(agent=agent, room=ctx.room, room_input_options=room_input)
-
-    # First spoken turn: greet + ask for consent.
-    await built.session.generate_reply(instructions=greeting_instructions(language))
+    # The agent greets + asks for consent via IntakeAgent.on_enter (fires on session start).
+    log.info("session_started", room=ctx.room.name, language=language)
 
 
 if __name__ == "__main__":

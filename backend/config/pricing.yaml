@@ -7,7 +7,9 @@
 # ALL PRICES IN USD. Verified 2026-06-14 via web search (see docs/DECISIONS.md).
 # Units:
 #   stt  -> usd_per_second        (audio seconds processed)
-#   llm  -> usd_per_1m_input / usd_per_1m_output  (tokens)
+#   llm  -> usd_per_1m_input / usd_per_1m_output / usd_per_1m_cached_input  (tokens)
+#          (cached input = prompt-cache hits; see telemetry/cost.py. Omit/null -> billed at
+#           full input price.)
 #   tts  -> usd_per_character
 #
 # Treat these as starting defaults; re-verify before any real cost comparison (CLAUDE.md §15).
@@ -42,30 +44,36 @@ stt:
 
 llm:
   # OpenAI GPT-4.1 — POC default intake brain (best tool-calling for save_intake_field).
+  # OpenAI cached input = 0.25x input (prompt caching, ~75% off). Verified 2026-06-15.
   "openai/gpt-4.1":
     usd_per_1m_input: 2.00
     usd_per_1m_output: 8.00
+    usd_per_1m_cached_input: 0.50
     as_of: "2026-06-14"
     source: "OpenAI 2026 pricing trackers (cloudzero, costbench)"
   "openai/gpt-4.1-mini":
     usd_per_1m_input: 0.40
     usd_per_1m_output: 1.60
+    usd_per_1m_cached_input: 0.10
     as_of: "2026-06-14"
     source: "OpenAI 2026 pricing trackers"
   "openai/gpt-4.1-nano":
     usd_per_1m_input: 0.10
     usd_per_1m_output: 0.40
+    usd_per_1m_cached_input: 0.025
     as_of: "2026-06-14"
     source: "OpenAI 2026 pricing trackers"
-  # Gemini (config-swap alternative brain).
+  # Gemini (config-swap alternative brain). Cached input = 0.10x input (cache read, ~90% off).
   "google/gemini-2.5-flash":
     usd_per_1m_input: 0.30
     usd_per_1m_output: 2.50
+    usd_per_1m_cached_input: 0.03
     as_of: "2026-06-14"
     source: "https://ai.google.dev/gemini-api/docs/pricing"
   "google/gemini-2.5-flash-lite":
     usd_per_1m_input: 0.10
     usd_per_1m_output: 0.40
+    usd_per_1m_cached_input: 0.01
     as_of: "2026-06-14"
     source: "https://ai.google.dev/gemini-api/docs/pricing"
   # Sarvam LLM — price not confirmed at plan time (TODO: verify before use; not on POC path).

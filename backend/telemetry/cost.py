@@ -22,16 +22,43 @@ def _price(section: str, pricing_key: str, unit_field: str) -> float:
     return float(entry[unit_field])
 
 
+def _cached_input_price(pricing_key: str, default: float) -> float:
+    """Cached-input price for an LLM; falls back to `default` (full input) if unset.
+
+    No warning on miss — `usd_per_1m_cached_input` is optional (not every model is cached).
+    """
+    entry = load_pricing().get("llm", {}).get(pricing_key)
+    if not entry or entry.get("usd_per_1m_cached_input") is None:
+        return default
+    return float(entry["usd_per_1m_cached_input"])
+
+
 def stt_cost(seconds: float, pricing_key: str) -> float:
     """USD cost for STT audio seconds."""
     return round(seconds * _price("stt", pricing_key, "usd_per_second"), 8)
 
 
-def llm_cost(input_tokens: int, output_tokens: int, pricing_key: str) -> float:
-    """USD cost for LLM input + output tokens (per-1M pricing)."""
+def llm_cost(
+    input_tokens: int,
+    output_tokens: int,
+    pricing_key: str,
+    cached_tokens: int = 0,
+) -> float:
+    """USD cost for LLM tokens, applying the prompt-cache discount.
+
+    `cached_tokens` is the portion of `input_tokens` served from the prompt cache (LiveKit's
+    `prompt_tokens` is the total input, `prompt_cached_tokens` the cached subset). Cached tokens
+    are billed at `usd_per_1m_cached_input` (≈0.25x input for OpenAI, ≈0.10x for Gemini); the
+    remaining fresh input tokens at the full input price. `cached_tokens=0` reproduces the
+    no-caching cost, so callers/tests that omit it are unaffected.
+    """
     in_price = _price("llm", pricing_key, "usd_per_1m_input")
     out_price = _price("llm", pricing_key, "usd_per_1m_output")
-    return round((input_tokens * in_price + output_tokens * out_price) / 1_000_000, 8)
+    cached_price = _cached_input_price(pricing_key, in_price)
+    cached = max(0, min(cached_tokens, input_tokens))
+    fresh = input_tokens - cached
+    total = fresh * in_price + cached * cached_price + output_tokens * out_price
+    return round(total / 1_000_000, 8)
 
 
 def tts_cost(characters: int, pricing_key: str) -> float:

@@ -251,7 +251,7 @@ turn.
 
 ## 7A. Compare pipelines (cost vs performance) — the comparison goal
 
-The POC ships **six** pipelines (in `backend/config/pipelines.yaml`) so you can compare provider
+The POC ships these pipelines (in `backend/config/pipelines.yaml`) so you can compare provider
 combinations on cost and latency:
 
 | Pipeline | STT → LLM → TTS | Keys needed (besides LiveKit) |
@@ -262,6 +262,14 @@ combinations on cost and latency:
 | `global_quality` | Deepgram Nova-3 → Gemini 2.5 Flash → ElevenLabs Flash | GOOGLE, DEEPGRAM, ELEVENLABS |
 | `translate_bridge` | Saaras v3 (translate→EN) → GPT-4.1-mini → Sarvam Bulbul | OPENAI, SARVAM |
 | `whisper_eval` | OpenAI transcribe → GPT-4.1-mini → Sarvam Bulbul | OPENAI, SARVAM |
+| `whisper_sarvam_nano` | Whisper → GPT-4.1-nano → Sarvam Bulbul | OPENAI, SARVAM |
+| `whisper_sarvam_mini` | Whisper → GPT-4.1-mini → Sarvam Bulbul | OPENAI, SARVAM |
+| `whisper_sarvam_gemini` | Whisper → Gemini 2.5 Flash → Sarvam Bulbul | OPENAI, GOOGLE, SARVAM |
+
+> Costs are reported **with the prompt-cache discount applied** (cost.py uses
+> `usd_per_1m_cached_input` when the provider returns cached tokens), so `/api/compare` reflects
+> realistic LLM cost. `whisper-1` is batch-oriented — for live streaming set the STT model to
+> `gpt-4o-mini-transcribe` in the pipeline.
 
 **How to run a comparison:**
 1. Set the pipeline in `.env`: `ACTIVE_PIPELINE=global_stack` (make sure that pipeline's keys

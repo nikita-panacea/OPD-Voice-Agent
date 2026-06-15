@@ -21,7 +21,8 @@ clinical content stored (§9). Routing is by metric class name, so it's unit-tes
   - `STTMetrics` → if the current turn already has a response, `flush()` first (new utterance =
     new turn); add STT seconds + cost.
   - `EOUMetrics` → set end-of-utterance delay.
-  - `LLMMetrics` → add tokens + cost; capture TTFT.
+  - `LLMMetrics` → add tokens + cost (passes `cached_tokens` to `cost.llm_cost` so the
+    prompt-cache discount is applied); capture TTFT.
   - `TTSMetrics` → add characters + cost; capture TTFB.
 - **`flush()`** — if the turn has data, write a `TelemetryRow` (counts, costs, e2e latency),
   log a `turn_metered` event (cost + latency only), advance the turn index, reset.

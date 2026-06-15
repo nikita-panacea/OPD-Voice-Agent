@@ -4,6 +4,28 @@ Short architecture decision records and the §15 web-verification log. Newest fi
 
 ---
 
+## ADR-0011 — Whisper+Sarvam comparison pipelines + prompt-cache cost discount
+
+**Status:** accepted (2026-06-15).
+**Context:** A cost analysis estimated Whisper STT + {GPT-4.1 nano/mini, Gemini 2.5 Flash} +
+Sarvam TTS, and showed the re-sent system prompt makes prompt caching the main LLM lever — but
+`cost.py` billed all input at full price, so the dashboard overstated LLM cost.
+**Decision:**
+1. Added pipelines `whisper_sarvam_nano` / `whisper_sarvam_mini` / `whisper_sarvam_gemini`
+   (Whisper `whisper-1` STT → the three LLMs → Sarvam Bulbul) so the dashboard reports these
+   exact combinations.
+2. Added `usd_per_1m_cached_input` to the LLM entries in `pricing.yaml` (verified 2026-06-15:
+   OpenAI cached ≈ 0.25× input → gpt-4.1 $0.50 / mini $0.10 / nano $0.025; Gemini cache read
+   ≈ 0.10× input → 2.5-flash $0.03 / flash-lite $0.01).
+3. `cost.llm_cost(..., cached_tokens=0)` now bills cached tokens (a clamped subset of input) at
+   the cached rate; the meter passes `prompt_cached_tokens`, so `/api/compare` reflects realistic
+   cost. `cached_tokens=0` keeps old behavior (back-compatible).
+**Verified:** `build_session("whisper_sarvam_nano", ...)` builds; meter shows gpt-4.1-mini with
+8k/10k cached = $0.00176 vs $0.00416 uncached; 59 tests pass (incl. 4 new cached-cost tests).
+**Note:** `whisper-1` is batch-oriented — swap the STT model to `gpt-4o-mini-transcribe` for live
+streaming. Caching realized only if the provider returns `prompt_cached_tokens` (stable system
+prompt + tools makes this likely on OpenAI/Gemini).
+
 ## ADR-0010 — Marathi enabled end-to-end (VAD turn-detection fallback)
 
 **Status:** accepted (2026-06-15). **Supersedes ADR-0002 and ADR-0008's Marathi deferral.**

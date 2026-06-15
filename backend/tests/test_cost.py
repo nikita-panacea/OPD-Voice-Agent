@@ -27,3 +27,29 @@ def test_missing_price_returns_zero() -> None:
     assert llm_cost(1000, 1000, "sarvam/sarvam-30b") == 0.0
     # Unknown key also resolves to 0 (with a warning).
     assert stt_cost(10, "nonexistent/model") == 0.0
+
+
+def test_llm_cost_applies_cached_discount() -> None:
+    # GPT-4.1-mini: input $0.40, cached $0.10 per 1M. 1000 input, 800 cached, 0 output.
+    expected = (200 * 0.40 + 800 * 0.10) / 1e6
+    assert llm_cost(1000, 0, "openai/gpt-4.1-mini", cached_tokens=800) == pytest.approx(expected)
+
+
+def test_cached_zero_matches_full_input_price() -> None:
+    # cached_tokens=0 (the default) must reproduce the no-caching cost.
+    assert llm_cost(1000, 500, "openai/gpt-4.1-mini", cached_tokens=0) == llm_cost(
+        1000, 500, "openai/gpt-4.1-mini"
+    )
+
+
+def test_caching_is_cheaper_than_no_caching() -> None:
+    no_cache = llm_cost(10_000, 100, "google/gemini-2.5-flash")
+    with_cache = llm_cost(10_000, 100, "google/gemini-2.5-flash", cached_tokens=8_000)
+    assert with_cache < no_cache
+
+
+def test_cached_tokens_capped_at_input() -> None:
+    # cached can't exceed input — overshoot is clamped.
+    capped = llm_cost(1000, 0, "google/gemini-2.5-flash", cached_tokens=5000)
+    all_cached = llm_cost(1000, 0, "google/gemini-2.5-flash", cached_tokens=1000)
+    assert capped == all_cached == pytest.approx(1000 * 0.03 / 1e6)

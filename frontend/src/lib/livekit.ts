@@ -72,6 +72,7 @@ export function useIntakeRoom() {
   const [handoff, setHandoff] = useState(false);
   const [agentSpeaking, setAgentSpeaking] = useState(false);
   const [patientSpeaking, setPatientSpeaking] = useState(false);
+  const [micPublished, setMicPublished] = useState(false);
 
   const connect = useCallback(async (language: string) => {
     setStatus("connecting");
@@ -81,6 +82,7 @@ export function useIntakeRoom() {
     setUrgent(null);
     setCompleted(false);
     setHandoff(false);
+    setMicPublished(false);
     try {
       const { token, url } = await fetchToken(language);
       const room = new Room({ adaptiveStream: true, dynacast: true });
@@ -89,13 +91,19 @@ export function useIntakeRoom() {
       const localIdentity = () => room.localParticipant?.identity;
 
       room
-        .on(RoomEvent.TrackSubscribed, (track: RemoteTrack, _pub: RemoteTrackPublication) => {
-          if (track.kind === Track.Kind.Audio) {
-            const el = track.attach();
-            el.style.display = "none";
-            document.body.appendChild(el);
-          }
-        })
+        .on(
+          RoomEvent.TrackSubscribed,
+          (track: RemoteTrack, _pub: RemoteTrackPublication, participant?: Participant) => {
+            if (track.kind === Track.Kind.Audio) {
+              const el = track.attach();
+              el.style.display = "none";
+              document.body.appendChild(el);
+              // Autoplay can be blocked until a gesture; we also call room.startAudio() below.
+              void el.play().catch((err) => console.warn("[livekit] agent audio play blocked", err));
+              console.debug("[livekit] subscribed to agent audio from", participant?.identity);
+            }
+          },
+        )
         .on(RoomEvent.TranscriptionReceived, (segments: TranscriptionSegment[], participant?: Participant) => {
           const speaker: Caption["speaker"] =
             participant && participant.identity === localIdentity() ? "patient" : "agent";
@@ -151,7 +159,40 @@ export function useIntakeRoom() {
         });
 
       await room.connect(url, token);
-      await room.localParticipant.setMicrophoneEnabled(true);
+      console.debug("[livekit] connected to room", room.name, "as", localIdentity());
+
+      // Publish the microphone (prompts for permission). Surface failures clearly instead of
+      // failing the whole connection silently.
+      try {
+        await room.localParticipant.setMicrophoneEnabled(true);
+      } catch (micErr) {
+        setError(
+          "Microphone could not be started — allow mic access for this site in the browser, " +
+            "then reconnect. (" +
+            (micErr instanceof Error ? micErr.message : String(micErr)) +
+            ")",
+        );
+      }
+      const micOn = room.localParticipant.isMicrophoneEnabled;
+      setMicPublished(micOn);
+      console.debug(
+        "[livekit] microphone enabled:",
+        micOn,
+        "| audio publications:",
+        room.localParticipant.audioTrackPublications.size,
+      );
+      if (!micOn) {
+        setError((prev) => prev ?? "Microphone is not publishing — check the browser mic permission.");
+      }
+
+      // Unlock audio playback (autoplay policy) using this user-gesture context so the agent
+      // can be heard.
+      try {
+        await room.startAudio();
+      } catch {
+        /* ignored — agent audio elements also call play() */
+      }
+
       setStatus("connected");
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));

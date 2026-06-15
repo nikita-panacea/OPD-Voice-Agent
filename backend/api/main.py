@@ -8,13 +8,17 @@ from __future__ import annotations
 
 from contextlib import asynccontextmanager
 
+from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from api import dashboard, sessions, tokens
+from config.settings import ENV_FILE
 from logging_setup import configure_logging, get_logger
 from store.db import init_db
 
+# Load .env into os.environ (consistent with the worker; harmless for the API).
+load_dotenv(ENV_FILE)
 configure_logging()
 log = get_logger("api")
 

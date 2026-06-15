@@ -19,7 +19,7 @@ from livekit import rtc
 from livekit.agents import Agent, RunContext, StopResponse, function_tool
 from livekit.agents.llm import ChatContext, ChatMessage
 
-from agent.prompts import build_instructions
+from agent.prompts import build_instructions, greeting_instructions
 from intake import red_flags, report
 from intake.questions import critical_field_ids, get_field
 from intake.state import IntakeState
@@ -42,6 +42,15 @@ class IntakeAgent(Agent):
     def bind_room(self, room: rtc.Room) -> None:
         """Give the agent the room handle so it can push live UI updates (set by the worker)."""
         self._room = room
+
+    async def on_enter(self) -> None:
+        """Speak first: greet the patient and ask for consent the moment the agent joins.
+
+        Runs automatically when the agent becomes active in the session, so the patient hears
+        the assistant before they say anything.
+        """
+        log.info("agent_on_enter_greeting", session=self._state.session_id, language=self._language)
+        await self.session.generate_reply(instructions=greeting_instructions(self._language))
 
     async def _publish(self, payload: dict) -> None:
         """Send a JSON data message to the patient's browser (live field panel)."""
