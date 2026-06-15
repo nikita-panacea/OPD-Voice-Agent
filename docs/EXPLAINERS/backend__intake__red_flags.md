@@ -2,7 +2,7 @@
 
 ## Purpose
 The mandatory emergency safety backstop (§2.2). Scans every patient utterance for red-flag
-phrases (en + hi + romanized code-mix) and returns a match so the agent can escalate —
+phrases (en + hi + mr + romanized code-mix) and returns a match so the agent can escalate —
 independently of whether the LLM chooses to. Pure Python, heavily unit-tested.
 
 ## Dependencies & data in/out
@@ -13,8 +13,9 @@ independently of whether the LLM chooses to. Pure Python, heavily unit-tested.
 - **`RedFlag`** — frozen dataclass `{category, term, advice}`.
 - **`ESCALATION_MESSAGE`** — calm, localized "alert staff now" message spoken on escalation.
 - **`RED_FLAG_TERMS`** — category → trigger phrases. Categories: chest_pain, breathing, stroke,
-  severe_bleeding, anaphylaxis, loss_of_consciousness, self_harm. Each has English, Hindi
-  (Devanagari), and romanized code-mix variants.
+  severe_bleeding, anaphylaxis, loss_of_consciousness, self_harm. Each has English, Hindi +
+  Marathi (Devanagari), and romanized code-mix variants. Marathi terms use short roots so
+  common intensifiers (e.g. "खूप") between words still match.
 - **`detect(text, language)`** — case-insensitive substring scan; returns the first match with
   the language-appropriate advice, else None.
 

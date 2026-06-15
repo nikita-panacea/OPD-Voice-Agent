@@ -9,7 +9,7 @@ from intake.questions import (
     required_field_ids,
 )
 
-POC_LANGUAGES = ["en", "hi"]
+POC_LANGUAGES = ["en", "hi", "mr"]
 
 
 def test_ids_are_unique() -> None:
@@ -48,4 +48,4 @@ def test_required_includes_chief_complaint() -> None:
 def test_localized_falls_back_to_english() -> None:
     f = get_field("severity")
     assert f is not None
-    assert localized(f.prompt, "mr") == f.prompt["en"]  # Marathi not present -> English
+    assert localized(f.prompt, "ta") == f.prompt["en"]  # Tamil not present -> English fallback

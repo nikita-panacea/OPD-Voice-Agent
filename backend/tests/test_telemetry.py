@@ -86,10 +86,7 @@ def test_new_user_utterance_flushes_previous_turn() -> None:
 
     with session_scope() as db:
         rows = (
-            db.query(TelemetryRow)
-            .filter_by(session_id=sid)
-            .order_by(TelemetryRow.turn_index)
-            .all()
+            db.query(TelemetryRow).filter_by(session_id=sid).order_by(TelemetryRow.turn_index).all()
         )
         assert [r.turn_index for r in rows] == [0, 1]
         assert rows[0].tts_characters == 40

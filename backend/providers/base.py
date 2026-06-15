@@ -94,9 +94,7 @@ class ProviderMeter:
                 ),
             )
         # TTS
-        chars = int(
-            _first_attr(metrics, ["characters_count", "characters", "char_count"], 0) or 0
-        )
+        chars = int(_first_attr(metrics, ["characters_count", "characters", "char_count"], 0) or 0)
         return BillableUnits(stage=self.stage, tts_characters=chars)
 
 

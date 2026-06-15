@@ -26,7 +26,10 @@ flowchart LR
 Notes:
 - **Krisp BVC** requires LiveKit Cloud (verified 2026-06-14). Applied once on the input track
   via `RoomInputOptions(noise_cancellation=...)`; client-side noise filter is disabled.
-- **Turn detector** has **no Marathi** support → Marathi deferred; POC = en + hi.
+- **Languages: en + hi + mr.** The semantic `MultilingualModel` turn detector covers en/hi but
+  **not Marathi** (verified against the installed model). So Marathi sessions fall back to
+  **VAD endpointing** (`turn_detection="vad"`); STT/TTS handle Marathi natively (Sarvam `mr-IN`).
+  Turn handling is configured via `TurnHandlingOptions(endpointing=EndpointingOptions(...))`.
 - The meter records counts/cost/latency only — **never clinical content** (§9).
 
 ## Conversation state machine (intake brain)

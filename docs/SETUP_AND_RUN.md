@@ -4,13 +4,14 @@ A complete, copy-paste runbook to get the POC talking end to end: **patient spea
 browser → agent listens, asks intake questions, escalates red flags → a clinician report +
 per-turn cost/latency telemetry**.
 
-> Pipeline used by the POC: **`indic_quality`** = Sarvam Saaras v3 STT → OpenAI GPT‑4.1 →
-> Sarvam Bulbul TTS, on **LiveKit Cloud** (required for Krisp noise cancellation). Languages:
-> **English + Hindi**.
+> Default pipeline: **`indic_quality`** = Sarvam Saaras v3 STT → OpenAI GPT‑4.1 → Sarvam Bulbul
+> TTS, on **LiveKit Cloud** (required for Krisp noise cancellation). Languages: **English,
+> Hindi, Marathi** (Marathi uses a VAD turn-detection fallback — the semantic turn detector has
+> no Marathi; STT/TTS handle it natively). Other pipelines are available for comparison (§7A).
 
 > ⚠️ **POC, not production.** No diagnosis/treatment. PHI handling is dev-grade (SQLite +
-> shared secret). Hindi prompts and the §8.1 question set are machine-authored and need
-> clinical review before real patient use. See [DECISIONS.md](DECISIONS.md) and CLAUDE.md §2.
+> shared secret). Hindi + Marathi prompts and the §8.1 question set are machine-authored and
+> need clinical review before real patient use. See [DECISIONS.md](DECISIONS.md) and CLAUDE.md §2.
 
 ---
 
@@ -194,7 +195,7 @@ Expect: `Local: http://localhost:5173/`.
 ## 6. Use it
 
 1. Open **http://localhost:5173** in Chrome/Edge.
-2. Pick a **language** (English or हिन्दी) and click **Start conversation**.
+2. Pick a **language** (English, हिन्दी, or मराठी) and click **Start conversation**.
 3. **Allow microphone** access when prompted.
 4. The assistant greets you and asks for **consent** → say "yes".
 5. Talk to it. Watch:
@@ -296,7 +297,7 @@ combinations on cost and latency:
 ```bash
 cd backend
 # from an activated venv:
-pytest -q                 # 41 tests: red flags, consent gate, cost math, telemetry, report, state, Hindi
+pytest -q                 # 55 tests: red flags, consent gate, cost math, telemetry, report, state, en/hi/mr
 ruff check .              # lint
 black --check .           # formatting
 
@@ -319,6 +320,7 @@ npx tsc --noEmit          # frontend type-check
 | Telemetry/cost | `telemetry` table rows with tokens/chars/seconds, per-component cost, e2e latency |
 | Report | `/report` (JSON) and `/report.md` carry the disclaimer + chief-complaint quote |
 | Hindi | Repeat the flow in हिन्दी; the agent replies in Hindi; report labels are Hindi |
+| Marathi | Repeat the flow in मराठी; the agent replies in Marathi; report labels are Marathi (uses VAD endpointing — turn-taking slightly less semantic) |
 | Pipeline comparison | Run sessions under ≥2 `ACTIVE_PIPELINE` values, then `python -m telemetry.compare` / `GET /api/compare` shows cost + latency per pipeline |
 
 ---

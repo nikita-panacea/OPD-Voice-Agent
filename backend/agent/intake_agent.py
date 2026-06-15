@@ -55,9 +55,7 @@ class IntakeAgent(Agent):
             log.warning("publish_data_failed", error=str(exc))
 
     # ----------------------------------------------------- safety backstop hook
-    async def on_user_turn_completed(
-        self, turn_ctx: ChatContext, new_message: ChatMessage
-    ) -> None:
+    async def on_user_turn_completed(self, turn_ctx: ChatContext, new_message: ChatMessage) -> None:
         """Deterministic red-flag screen on every patient utterance (§2.2 backstop).
 
         Runs independently of the LLM: if a red-flag phrase is detected we raise the URGENT
@@ -174,9 +172,7 @@ class IntakeAgent(Agent):
             report.generate_and_store(self._state.session_id)
         except Exception as exc:  # noqa: BLE001 - report is best-effort at completion
             log.warning("report_generation_failed", error=str(exc))
-        await self._publish(
-            {"type": "complete", "completion_rate": self._state.completion_rate()}
-        )
+        await self._publish({"type": "complete", "completion_rate": self._state.completion_rate()})
         return (
             "Intake complete. Thank the patient and let them know the doctor will review the "
             "summary."

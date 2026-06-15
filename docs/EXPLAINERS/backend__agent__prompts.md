@@ -13,7 +13,8 @@ checklist. The guardrails appear here AND as code paths (consent gate + tools + 
 - **`PERSONA`** — "Dhara", warm automated OPD assistant; short, plain, patient.
 - **`GUARDRAILS`** — the absolute rules: not a doctor, no diagnosis/advice, red-flag → stop +
   `flag_urgent`, consent first, brevity.
-- **`CONSENT_SCRIPT`** — per-language consent framing (en/hi).
+- **`CONSENT_SCRIPT`** — per-language consent framing (en/hi/mr); `LANGUAGE_NAMES` maps the
+  short code to the spoken language name ("English"/"Hindi"/"Marathi").
 - **`BEHAVIOR`** — how to run the intake: one field at a time, adapt order, call
   `save_intake_field`, read-back + `confirm_field` for critical fields, clarify with the simpler
   prompt + example, ask to repeat when unsure, `complete_intake` at the end.

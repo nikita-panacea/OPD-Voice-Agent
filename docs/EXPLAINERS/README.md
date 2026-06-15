@@ -67,12 +67,15 @@ walkthrough). A file is not "done" until its explainer exists and matches the co
 - [backend/api/sessions.py](backend__api__sessions.md) — staff list + report endpoints
 - [backend/tests/test_report_schema.py](backend__intake__report.md) — report tests
 
-### Hindi (Phase H)
-Hindi reused the bilingual support built in Phases C–G (no new source files): Saaras `hi-IN`
-([stt_sarvam](backend__providers__stt_sarvam.md)), Bulbul Hindi voice
-([tts_sarvam](backend__providers__tts_sarvam.md) + voices.yaml), Hindi prompts
-([questions](backend__intake__questions.md) + [prompts](backend__agent__prompts.md)), and the UI
-picker. Verified by `backend/tests/test_languages.py`.
+### Languages: Hindi + Marathi (Phase H + Marathi)
+en/hi/mr reuse the multilingual support across Phases C–G (no new source files): Saaras
+`hi-IN`/`mr-IN` ([stt_sarvam](backend__providers__stt_sarvam.md)), Bulbul voices
+([tts_sarvam](backend__providers__tts_sarvam.md) + voices.yaml), hi/mr prompts + consent
+([questions](backend__intake__questions.md) + [prompts](backend__agent__prompts.md)), hi/mr
+red-flag terms ([red_flags](backend__intake__red_flags.md)), and the UI picker. **Marathi
+turn-detection caveat:** the semantic `MultilingualModel` has no Marathi, so Marathi sessions
+use a VAD endpointing fallback selected in [registry](backend__providers__registry.md)
+(`supports_turn_detector`). Verified by `backend/tests/test_languages.py`.
 
 > `backend/pyproject.toml` is build/packaging metadata (dependencies, ruff/black/pytest
 > config) — documented inline; no separate function-wise explainer.

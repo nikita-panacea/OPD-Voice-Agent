@@ -35,8 +35,9 @@ log = get_logger("agent.worker")
 
 server = AgentServer()
 
-# Languages the POC supports live (Marathi deferred — turn-detector has no Marathi).
-SUPPORTED_LANGUAGES = {"en", "hi"}
+# Languages the POC supports live. Marathi uses a VAD endpointing fallback (the semantic
+# turn detector has no Marathi); STT/TTS handle Marathi natively via Sarvam mr-IN.
+SUPPORTED_LANGUAGES = {"en", "hi", "mr"}
 
 
 def _resolve_language(participant) -> str:

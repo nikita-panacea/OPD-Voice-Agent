@@ -4,6 +4,30 @@ Short architecture decision records and the §15 web-verification log. Newest fi
 
 ---
 
+## ADR-0010 — Marathi enabled end-to-end (VAD turn-detection fallback)
+
+**Status:** accepted (2026-06-15). **Supersedes ADR-0002 and ADR-0008's Marathi deferral.**
+**Context:** Marathi is a first-class language in CLAUDE.md §1; the only true blocker was the
+turn detector. Re-verified 2026-06-15 against the **installed** model's `languages.json`:
+MultilingualModel covers en/hi but **not mr** (authoritative, not just the doc claim).
+**Decision:** Ship Marathi across the whole pipeline. STT/TTS already support it (Sarvam
+`mr-IN`; Deepgram monolingual `mr`; ElevenLabs/Whisper `mr`). For the turn-detection gap,
+`registry.build_session` selects the semantic `MultilingualModel` for supported languages and
+falls back to **`turn_detection="vad"`** (Silero VAD endpointing) for Marathi, with patience-
+biased `min/max` endpointing delays (§8.2). Added mr to: the 17-field schema, prompts +
+consent script, red-flag terms + escalation message, voices.yaml, worker/token
+`SUPPORTED_LANGUAGES`, and the UI language picker.
+**Also:** migrated `AgentSession` from the now-deprecated `turn_detection` +
+`min/max_endpointing_delay` kwargs to `turn_handling=TurnHandlingOptions(turn_detection=...,
+endpointing=EndpointingOptions(min_delay=, max_delay=))` (deprecated-in-1.6, removed in v2.0).
+**Verified at build:** `build_session(..., "mr")` constructs a full `AgentSession`
+(turn_detection=vad) with no deprecation warning; 55 tests pass incl. mr schema/prompt/report/
+red-flag/turn-detection coverage.
+**Caveat:** mr (and hi) prompts are machine-authored, `needs_clinical_review=true` — a Marathi-
+speaking clinician must review before real use. VAD endpointing is less semantically aware than
+MultilingualModel, so Marathi turn-taking may be slightly less smooth; revisit if LiveKit adds
+Marathi to the turn detector.
+
 ## ADR-0001 — POC scope: one pipeline, en + hi, narrow vertical slice
 
 **Status:** accepted (2026-06-14).
@@ -17,7 +41,8 @@ their provider wrappers added later (no code churn).
 
 ## ADR-0002 — Marathi deferred (turn-detector limitation)
 
-**Status:** accepted (2026-06-14).
+**Status:** SUPERSEDED by ADR-0010 (2026-06-15) — Marathi is now shipped with a VAD fallback.
+**Status (original):** accepted (2026-06-14).
 **Context:** CLAUDE.md wants all three of en/hi/mr first-class.
 **Decision:** POC ships en + hi only. The LiveKit `MultilingualModel` turn detector supports
 Hindi but **not Marathi** (verified — see facts table #5). Marathi belongs in the post-POC

@@ -40,7 +40,7 @@ class Settings(BaseSettings):
 
     # --- LLM providers ---
     openai_api_key: str = ""
-    google_api_key: str = ""          # optional in POC (Gemini alt brain)
+    google_api_key: str = ""  # optional in POC (Gemini alt brain)
     sarvam_api_key: str = ""
 
     # --- Speech providers available but deferred in POC ---
@@ -51,7 +51,7 @@ class Settings(BaseSettings):
     database_url: str = "sqlite:///./opd.db"
     active_pipeline: str = "indic_quality"
     data_retention_days: int = 30
-    staff_auth_secret: str = "dev-staff-secret"   # POC only; not production-secure
+    staff_auth_secret: str = "dev-staff-secret"  # POC only; not production-secure
     log_level: str = "INFO"
 
 

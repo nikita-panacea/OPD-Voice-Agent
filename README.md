@@ -4,10 +4,11 @@ A voice-to-voice patient intake agent for a hospital OPD. Before a patient sees 
 the agent holds a natural spoken conversation, collects the current complaint and relevant
 history, and produces a concise structured intake report for the clinician.
 
-> **This is a POC**, not the production system. It proves the concept end-to-end on **one**
-> pipeline (`indic_quality`: Sarvam Saaras v3 STT → GPT-4.1 → Sarvam Bulbul TTS) in
-> **English + Hindi**. See `.claude/plans/` and `docs/DECISIONS.md` for scope and the list of
-> explicitly-deferred features. Build contract: [CLAUDE.md](CLAUDE.md).
+> **This is a POC**, not the production system. The default live pipeline is `indic_quality`
+> (Sarvam Saaras v3 STT → GPT-4.1 → Sarvam Bulbul TTS); several other pipelines are wired for
+> cost/performance comparison. Languages: **English, Hindi, Marathi** (Marathi uses a VAD
+> turn-detection fallback — see [docs/DECISIONS.md](docs/DECISIONS.md) ADR-0010). See
+> `.claude/plans/` and `docs/DECISIONS.md` for scope. Build contract: [CLAUDE.md](CLAUDE.md).
 
 > ⚠️ **Not a diagnostic or treatment tool.** It collects information and reflects it back.
 > Patient data is sensitive personal data — see the guardrails in CLAUDE.md §2. PHI handling

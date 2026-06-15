@@ -7,10 +7,11 @@ wrapper.
 
 ## Structure
 - `provider` / `model` — the TTS engine these voices belong to (Sarvam Bulbul for the POC).
-- `voices:` map of language → `{ speaker: ... }` (POC: `en`, `hi`).
-- `default:` fallback voice used for any language not listed (e.g. Marathi in the POC).
+- `voices:` map of language → `{ speaker: ... }` (`en`, `hi`, `mr`).
+- `default:` fallback voice used for any language not listed.
 
 ## Gotchas / TODOs
 - Sarvam Bulbul speaker IDs can change between model versions — verify the exact speaker names
   against the Sarvam plugin/docs at build (Risk R5).
-- Marathi is intentionally absent (deferred; turn-detector has no Marathi support).
+- Bulbul voices are multilingual across Indic languages, so one speaker serves en/hi/mr
+  (the TTS wrapper sets `target_language_code` per language, e.g. `mr-IN`).

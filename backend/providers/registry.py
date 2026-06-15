@@ -30,6 +30,36 @@ from providers.base import LLMProvider, ProviderMeter, STTProvider, TTSProvider
 
 log = get_logger(__name__)
 
+# Languages the LiveKit MultilingualModel turn detector supports (verified 2026-06-14 against
+# the installed model's languages.json). Marathi (mr) is NOT in this set, so Marathi sessions
+# fall back to VAD-based endpointing (see _turn_detection_for).
+TURN_DETECTOR_LANGUAGES = {
+    "en",
+    "es",
+    "fr",
+    "de",
+    "it",
+    "pt",
+    "nl",
+    "zh",
+    "ja",
+    "ko",
+    "id",
+    "tr",
+    "ru",
+    "hi",
+}
+
+# Endpointing delays (seconds) — bias toward patience for elderly/unwell patients (§8.2).
+MIN_ENDPOINTING_DELAY = 0.5
+MAX_ENDPOINTING_DELAY = 6.0
+
+
+def supports_turn_detector(language: str) -> bool:
+    """True if the semantic MultilingualModel turn detector covers this language."""
+    return language in TURN_DETECTOR_LANGUAGES
+
+
 # name -> builder. Separate tables per stage (a provider may serve >1 stage, e.g. Sarvam).
 STT_PROVIDERS: dict[str, STTProvider] = {
     stt_sarvam.PROVIDER.name: stt_sarvam.PROVIDER,
@@ -97,22 +127,38 @@ def build_session(pipeline_name: str, language: str) -> BuiltSession:
     tts_b = _resolve(TTS_PROVIDERS, cfg["tts"], "TTS").build(cfg["tts"], language)
 
     # Lazy heavy imports so this module imports without the full agent stack.
-    from livekit.agents import AgentSession
+    from livekit.agents import AgentSession, TurnHandlingOptions
+    from livekit.agents.voice.turn import EndpointingOptions
     from livekit.plugins import silero
-    from livekit.plugins.turn_detector.multilingual import MultilingualModel
+
+    # Semantic turn detection for supported languages; VAD endpointing fallback for the rest
+    # (e.g. Marathi — not in the MultilingualModel set). Both honor the endpointing delays.
+    if supports_turn_detector(language):
+        from livekit.plugins.turn_detector.multilingual import MultilingualModel
+
+        turn_detection: Any = MultilingualModel()
+    else:
+        turn_detection = "vad"
 
     session = AgentSession(
         stt=stt_b.component,
         llm=llm_b.component,
         tts=tts_b.component,
         vad=silero.VAD.load(),
-        turn_detection=MultilingualModel(),
+        turn_handling=TurnHandlingOptions(
+            turn_detection=turn_detection,
+            endpointing=EndpointingOptions(
+                min_delay=MIN_ENDPOINTING_DELAY,
+                max_delay=MAX_ENDPOINTING_DELAY,
+            ),
+        ),
     )
 
     log.info(
         "session_built",
         pipeline=pipeline_name,
         language=language,
+        turn_detection="multilingual" if supports_turn_detector(language) else "vad",
         stt=f"{cfg['stt']['provider']}/{cfg['stt']['model']}",
         llm=f"{cfg['llm']['provider']}/{cfg['llm']['model']}",
         tts=f"{cfg['tts']['provider']}/{cfg['tts']['model']}",

@@ -109,9 +109,9 @@ def aggregate() -> list[PipelineStats]:
                 avg_cost_per_intake_usd=round(sum(costs) / len(costs), 6) if costs else 0.0,
                 p50_latency_ms=_percentile(latencies[pipe], 50),
                 p95_latency_ms=_percentile(latencies[pipe], 95),
-                avg_completion_rate=round(sum(completions) / len(completions), 3)
-                if completions
-                else 0.0,
+                avg_completion_rate=(
+                    round(sum(completions) / len(completions), 3) if completions else 0.0
+                ),
             )
         )
 

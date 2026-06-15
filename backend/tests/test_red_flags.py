@@ -50,6 +50,26 @@ def test_advice_is_localized_to_hindi() -> None:
     assert flag is not None and "स्टाफ़" in flag.advice
 
 
+def test_chest_pain_marathi() -> None:
+    flag = detect("मला छातीत खूप दुखतंय", "mr")
+    assert flag is not None and flag.category == "chest_pain"
+
+
+def test_breathing_marathi() -> None:
+    flag = detect("मला धाप लागते आणि श्वास घेता येत नाही", "mr")
+    assert flag is not None and flag.category == "breathing"
+
+
+def test_faint_marathi() -> None:
+    flag = detect("ती बेशुद्ध पडली", "mr")
+    assert flag is not None and flag.category == "loss_of_consciousness"
+
+
+def test_advice_is_localized_to_marathi() -> None:
+    flag = detect("छातीत दुखणे", "mr")
+    assert flag is not None and "रुग्णालय" in flag.advice
+
+
 # ------------------------------------------------------------------ consent gate
 @pytest.mark.asyncio
 async def test_consent_gate_blocks_saving_before_consent() -> None:

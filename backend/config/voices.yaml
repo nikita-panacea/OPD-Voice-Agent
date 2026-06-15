@@ -1,10 +1,12 @@
 # voices.yaml — per-language TTS voice IDs (one voice per language; CLAUDE.md §7).
 #
 # The agent always replies in the patient's language with a language-matched voice.
-# POC covers en + hi (Marathi deferred — turn-detector has no Marathi support, see plan §3).
+# POC covers en + hi + mr. (Marathi STT/TTS work via Sarvam mr-IN; only the semantic
+# turn detector lacks Marathi, so mr sessions use VAD endpointing — see registry.py.)
 #
 # NOTE: Sarvam Bulbul speaker IDs can change between model versions. Verify the exact
-# speaker names against `sarvam.TTS` / the Sarvam docs at build time (Risk R5). The
+# speaker names against `sarvam.TTS` / the Sarvam docs at build time (Risk R5). Bulbul
+# voices are multilingual across Indic languages, so one speaker serves en/hi/mr. The
 # registry passes voices[language] into the TTS wrapper; an unknown language falls back
 # to `default`.
 
@@ -16,7 +18,8 @@ voices:
     speaker: "anushka"      # verify available speaker for bulbul:v2
   hi:
     speaker: "anushka"      # Bulbul voices are multilingual across Indic + English
-  # mr: deferred (post-POC)
+  mr:
+    speaker: "anushka"      # Marathi via Bulbul (target_language_code mr-IN)
 
 default:
   speaker: "anushka"

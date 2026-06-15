@@ -21,7 +21,7 @@ from config.settings import get_settings
 
 router = APIRouter(prefix="/api", tags=["tokens"])
 
-SUPPORTED_LANGUAGES = {"en", "hi"}
+SUPPORTED_LANGUAGES = {"en", "hi", "mr"}
 
 
 class TokenRequest(BaseModel):
