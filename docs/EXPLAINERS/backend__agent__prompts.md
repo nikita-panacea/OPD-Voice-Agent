@@ -20,9 +20,14 @@ checklist. The guardrails appear here AND as code paths (consent gate + tools + 
   prompt + example, ask to repeat when unsure, `complete_intake` at the end.
 - **`_checklist(language)`** — renders each field (id, type, tags, localized ask + simpler
   re-ask) into the prompt.
+  - Includes a **mishearing/sense-check rule**: STT can return wrong/homophone words, so the
+    agent must check each answer is coherent + plausible for the question before saving, and
+    confirm/repeat on doubt (never assume garbled text is correct).
 - **`build_instructions(language)`** — assembles persona + "speak only in <lang>" + guardrails +
   consent + behavior + checklist.
 - **`greeting_instructions(language)`** — instruction for the first spoken turn (greet + consent).
+- **`repeat_request(language)` / `low_confidence_handoff(language)`** — localized (en/hi/mr)
+  spoken lines the agent's ASR-confidence gate uses (deterministic, not LLM-generated).
 
 ## Gotchas / TODOs
 - Prompt is ~6KB; sent each turn → prompt caching (OpenAI `prompt_cache_key`) matters for cost.

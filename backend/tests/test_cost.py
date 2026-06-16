@@ -23,10 +23,10 @@ def test_tts_cost_per_character() -> None:
 
 
 def test_missing_price_returns_zero() -> None:
-    # Sarvam LLM token price is intentionally null in pricing.yaml (TODO).
-    assert llm_cost(1000, 1000, "sarvam/sarvam-30b") == 0.0
-    # Unknown key also resolves to 0 (with a warning).
+    # An unknown/unpriced key resolves to 0.0 (with a warning) for every stage.
+    assert llm_cost(1000, 1000, "nonexistent/llm") == 0.0
     assert stt_cost(10, "nonexistent/model") == 0.0
+    assert tts_cost(1000, "nonexistent/tts") == 0.0
 
 
 def test_llm_cost_applies_cached_discount() -> None:

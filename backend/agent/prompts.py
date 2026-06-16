@@ -67,7 +67,15 @@ to the patient and ask them to confirm. After they confirm, call `confirm_field`
 - CLARIFICATION: if the patient says they don't understand, gives an off-topic answer, asks \
 "what do you mean?", or is silent, re-ask using simpler everyday words and a concrete example \
 (each field below includes a simpler version). Do not move on until they understand.
-- If speech is unclear or you are unsure, ask them to repeat rather than guessing.
+- SPEECH-TO-TEXT CAN MISHEAR (this is critical): the transcript you receive may contain wrong \
+or homophone words, names, numbers, or medicine names that the patient did NOT actually say. \
+Before you act on any answer, sanity-check that it is coherent and a *plausible* reply to the \
+question you asked, in a medical-intake context. If the answer seems garbled, nonsensical, \
+unrelated to your question, or medically implausible, DO NOT assume it is correct and DO NOT \
+save it — say you're not sure you heard correctly, repeat back what you think you heard, and \
+ask the patient to confirm or say it again. Only call `save_intake_field` once the answer makes \
+sense and you are confident; if in doubt, confirm first. Treat unusual medicine/drug names, \
+ages, and numbers with extra caution and always read them back.
 - GRACEFUL FAILURE: if the patient declines consent, asks to speak to a person, or you cannot \
 understand them after two or three tries, call `request_staff_handoff` instead of guessing.
 - When all required fields are captured, briefly thank the patient, tell them the doctor will \
@@ -116,3 +124,37 @@ def greeting_instructions(language: str) -> str:
         "clinic that will collect some information before the doctor, note the conversation is "
         "recorded for the care team, and ask for their consent to begin."
     )
+
+
+# Spoken when the agent can't trust what it heard (low ASR confidence). Localized so the
+# deterministic guard in IntakeAgent doesn't depend on the LLM.
+REPEAT_REQUEST = {
+    "en": "Sorry, I didn't catch that clearly. Could you please say it once more?",
+    "hi": "माफ़ कीजिए, मैं इसे ठीक से सुन नहीं पाई। क्या आप इसे एक बार फिर से कह सकते हैं?",
+    "mr": "माफ करा, मला ते नीट ऐकू आले नाही. कृपया तुम्ही ते पुन्हा एकदा सांगू शकता का?",
+}
+
+LOW_CONFIDENCE_HANDOFF = {
+    "en": (
+        "I'm having trouble hearing you clearly. Let me connect you with a member of the "
+        "hospital staff who can help."
+    ),
+    "hi": (
+        "मुझे आपकी बात साफ़ सुनने में कठिनाई हो रही है। मैं आपको अस्पताल के किसी कर्मचारी से जोड़ती हूँ "
+        "जो आपकी मदद कर सके।"
+    ),
+    "mr": (
+        "मला तुमचे बोलणे स्पष्ट ऐकण्यात अडचण येत आहे. मी तुम्हाला मदत करू शकणाऱ्या रुग्णालयातील "
+        "कर्मचाऱ्याशी जोडते."
+    ),
+}
+
+
+def repeat_request(language: str) -> str:
+    """Localized 'please say that again' line for low-confidence speech."""
+    return REPEAT_REQUEST.get(language, REPEAT_REQUEST["en"])
+
+
+def low_confidence_handoff(language: str) -> str:
+    """Localized message when repeated mis-hearing triggers a staff handoff."""
+    return LOW_CONFIDENCE_HANDOFF.get(language, LOW_CONFIDENCE_HANDOFF["en"])

@@ -26,6 +26,28 @@ Sarvam TTS, and showed the re-sent system prompt makes prompt caching the main L
 streaming. Caching realized only if the provider returns `prompt_cached_tokens` (stable system
 prompt + tools makes this likely on OpenAI/Gemini).
 
+## ADR-0013 — ASR mis-hearing protection (sense-check + confidence gate)
+
+**Status:** accepted (2026-06-16).
+**Context:** When STT mis-transcribes (homophones, garbled words), the agent accepted the
+nonsensical text as the patient's answer and continued, instead of clarifying (violates §8.2
+"low ASR confidence → clarify, don't guess").
+**Decision (two layers):**
+1. **Prompt sense-check** (works with any STT, even without confidence): `prompts.py` now tells
+   the agent that STT can return wrong/homophone words and to verify each answer is coherent +
+   plausible for the question before saving — confirm/repeat on doubt, never assume garbled text,
+   read back unusual medicine names/numbers.
+2. **Deterministic confidence gate** in `IntakeAgent.on_user_turn_completed`
+   (`_low_confidence_decision`): if `ChatMessage.transcript_confidence` is in `(0, MIN_ASR_CONFIDENCE)`
+   the agent speaks a localized "please repeat" and `StopResponse`s (the misheard text is never
+   processed/saved); after `ASR_LOW_CONFIDENCE_LIMIT` consecutive low-confidence turns it hands
+   off to staff. Confidence None/0.0 = provider didn't report it → not gated (layer 1 still applies).
+**Settings:** `MIN_ASR_CONFIDENCE=0.5`, `ASR_LOW_CONFIDENCE_LIMIT=3` (tunable).
+**Verified:** 67 tests pass incl. `tests/test_asr_confidence.py` (repeat→handoff escalation,
+streak reset, None/0 treated as unknown).
+**Note:** the confidence gate only fires when the STT provider populates `transcript_confidence`
+(varies by provider); the prompt sense-check is the always-on layer.
+
 ## ADR-0012 — All-in cost (incl. LiveKit), full transcript, rotating file logs
 
 **Status:** accepted (2026-06-16).

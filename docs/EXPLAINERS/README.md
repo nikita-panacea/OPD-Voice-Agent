@@ -50,7 +50,8 @@ walkthrough). A file is not "done" until its explainer exists and matches the co
 ### safety (Phase E)
 - [backend/intake/red_flags.py](backend__intake__red_flags.md) — deterministic red-flag backstop
 - [backend/tests/test_red_flags.py](backend__intake__red_flags.md) — red-flag + consent-gate tests
-- (consent gate + handoff live in [intake_agent.py](backend__agent__intake_agent.md))
+- (consent gate + handoff + ASR-confidence gate live in [intake_agent.py](backend__agent__intake_agent.md))
+- [backend/tests/test_asr_confidence.py](backend__agent__intake_agent.md) — ASR mis-hearing gate tests
 
 ### telemetry (Phase F + comparison)
 - [backend/telemetry/events.py](backend__telemetry__events.md) — per-turn telemetry record

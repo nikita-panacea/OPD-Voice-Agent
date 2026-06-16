@@ -78,8 +78,9 @@ llm:
     source: "https://ai.google.dev/gemini-api/docs/pricing"
   # Sarvam LLM — price not confirmed at plan time (TODO: verify before use; not on POC path).
   "sarvam/sarvam-30b":
-    usd_per_1m_input: null
-    usd_per_1m_output: null
+    usd_per_1m_input: 0.026
+    usd_per_1m_output: 0.11
+    usd_per_1m_cached_input: 0.016
     as_of: "2026-06-14"
     source: "TODO: verify on https://www.sarvam.ai/api-pricing"
 

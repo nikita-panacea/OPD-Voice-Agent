@@ -19,7 +19,13 @@ from livekit import rtc
 from livekit.agents import Agent, RunContext, StopResponse, function_tool
 from livekit.agents.llm import ChatContext, ChatMessage
 
-from agent.prompts import build_instructions, greeting_instructions
+from agent.prompts import (
+    build_instructions,
+    greeting_instructions,
+    low_confidence_handoff,
+    repeat_request,
+)
+from config.settings import get_settings
 from intake import red_flags, report
 from intake.questions import critical_field_ids, get_field
 from intake.state import IntakeState
@@ -38,6 +44,10 @@ class IntakeAgent(Agent):
         self._state = state
         self._language = language
         self._room: rtc.Room | None = None
+        settings = get_settings()
+        self._min_asr_confidence = settings.min_asr_confidence
+        self._asr_low_confidence_limit = settings.asr_low_confidence_limit
+        self._low_conf_streak = 0  # consecutive low-confidence (misheard) turns
 
     def bind_room(self, room: rtc.Room) -> None:
         """Give the agent the room handle so it can push live UI updates (set by the worker)."""
@@ -63,25 +73,64 @@ class IntakeAgent(Agent):
         except Exception as exc:  # noqa: BLE001 - UI update is best-effort
             log.warning("publish_data_failed", error=str(exc))
 
-    # ----------------------------------------------------- safety backstop hook
-    async def on_user_turn_completed(self, turn_ctx: ChatContext, new_message: ChatMessage) -> None:
-        """Deterministic red-flag screen on every patient utterance (§2.2 backstop).
+    def _low_confidence_decision(self, confidence: float | None) -> str | None:
+        """Decide what to do about an STT transcript's confidence (updates the streak).
 
-        Runs independently of the LLM: if a red-flag phrase is detected we raise the URGENT
-        flag, notify the UI, speak a calm "alert staff now" message, and suppress the normal
-        LLM reply for this turn via `StopResponse` so the escalation is not contradicted.
+        Returns "handoff" after too many consecutive low-confidence turns, "repeat" for a single
+        low-confidence turn, or None when the turn is trusted. A confidence of None or 0.0 means
+        the provider didn't report it → treated as unknown (no gating; the prompt sense-check
+        still applies). Pure + stateful → unit-testable.
+        """
+        if confidence is None or not (0.0 < confidence < self._min_asr_confidence):
+            self._low_conf_streak = 0
+            return None
+        self._low_conf_streak += 1
+        if self._low_conf_streak >= self._asr_low_confidence_limit:
+            return "handoff"
+        return "repeat"
+
+    # ----------------------------------------------------- per-turn safety + ASR hook
+    async def on_user_turn_completed(self, turn_ctx: ChatContext, new_message: ChatMessage) -> None:
+        """Per-utterance guards that run before the LLM replies.
+
+        1. Red-flag screen (§2.2): on a hit, raise URGENT, notify the UI, speak the calm
+           "alert staff" line, and `StopResponse` so the escalation isn't contradicted.
+        2. ASR-confidence gate: if the transcript is low-confidence (likely misheard), ask the
+           patient to repeat instead of acting on garbled speech; after repeated failures, hand
+           off to staff. Both use `StopResponse` so the misheard text is never processed/saved.
         """
         text = getattr(new_message, "text_content", None) or ""
+
         flag = red_flags.detect(text, self._language)
-        if flag is None:
+        if flag is not None:
+            if not self._state.urgent_flag:
+                self._state.raise_urgent(f"{flag.category}: {flag.term}")
+                await self._publish({"type": "urgent", "reason": flag.category})
+            try:
+                await self.session.say(flag.advice)
+            except Exception as exc:  # noqa: BLE001 - speaking is best-effort
+                log.warning("escalation_say_failed", error=str(exc))
+            raise StopResponse
+
+        action = self._low_confidence_decision(getattr(new_message, "transcript_confidence", None))
+        if action is None:
             return
-        if not self._state.urgent_flag:
-            self._state.raise_urgent(f"{flag.category}: {flag.term}")
-            await self._publish({"type": "urgent", "reason": flag.category})
+        log.info(
+            "asr_low_confidence",
+            session=self._state.session_id,
+            action=action,
+            streak=self._low_conf_streak,
+        )
+        if action == "handoff":
+            self._state.finalize("handoff")
+            await self._publish({"type": "handoff", "reason": "repeated low ASR confidence"})
+            message = low_confidence_handoff(self._language)
+        else:
+            message = repeat_request(self._language)
         try:
-            await self.session.say(flag.advice)
+            await self.session.say(message)
         except Exception as exc:  # noqa: BLE001 - speaking is best-effort
-            log.warning("escalation_say_failed", error=str(exc))
+            log.warning("asr_say_failed", error=str(exc))
         raise StopResponse
 
     # ------------------------------------------------------------------ tools

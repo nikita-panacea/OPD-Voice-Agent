@@ -16,10 +16,16 @@ updates to the patient's UI panel.
 - **`bind_room(room)`** — the worker injects the room so the agent can publish UI updates.
 - **`_publish(payload)`** — best-effort JSON `publish_data` to the browser on topic `intake`
   (swallows errors; UI updates are non-critical).
-- **`on_user_turn_completed(turn_ctx, new_message)`** — the deterministic red-flag backstop:
-  runs `red_flags.detect` on the patient's text; on a hit it raises the URGENT flag, notifies
-  the UI, speaks the calm escalation via `session.say`, and `raise StopResponse` to suppress
-  the normal LLM reply for that turn. Independent of the LLM (§2.2).
+- **`on_user_turn_completed(turn_ctx, new_message)`** — per-utterance guards before the LLM
+  replies: (1) the deterministic **red-flag backstop** (raise URGENT + speak escalation +
+  `StopResponse`); (2) the **ASR-confidence gate** — if the transcript looks misheard it asks
+  the patient to repeat (or hands off after repeated failures), `StopResponse`-ing so garbled
+  text is never processed/saved.
+- **`_low_confidence_decision(confidence)`** — pure/stateful helper: returns `"repeat"`,
+  `"handoff"`, or `None` from the transcript confidence vs `MIN_ASR_CONFIDENCE`, tracking a
+  consecutive-low-confidence streak (`ASR_LOW_CONFIDENCE_LIMIT` → handoff). Confidence of
+  None/0.0 = "provider didn't report it" → not gated (the prompt sense-check still applies).
+  Unit-tested in `tests/test_asr_confidence.py`.
 - **`record_consent(context, granted)`** — sets consent in state + UI; returns next-step
   guidance (or the decline path: collect nothing, offer staff).
 - **`apply_field(field_id, value, confidence)`** — plain (non-tool) method holding the

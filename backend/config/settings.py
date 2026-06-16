@@ -54,6 +54,11 @@ class Settings(BaseSettings):
     staff_auth_secret: str = "dev-staff-secret"  # POC only; not production-secure
     log_level: str = "INFO"
     persist_transcript: bool = True  # store the full conversation transcript (PHI). See §9.
+    # ASR robustness: if an STT transcript's confidence is below this (and > 0), the agent asks
+    # the patient to repeat instead of acting on possibly-misheard speech; after N in a row it
+    # hands off to staff. Confidence of 0/None (provider didn't report it) is treated as unknown.
+    min_asr_confidence: float = 0.5
+    asr_low_confidence_limit: int = 3
 
 
 @lru_cache
