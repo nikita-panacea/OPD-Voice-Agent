@@ -9,6 +9,8 @@ from __future__ import annotations
 
 from typing import Any
 
+from livekit.plugins import sarvam
+
 from config.settings import get_voice
 from providers.base import ProviderMeter, Stage, StageBuild
 
@@ -23,8 +25,6 @@ class SarvamTTSProvider:
 
     def build(self, stage_cfg: dict[str, Any], language: str) -> StageBuild:
         """Construct `sarvam.TTS` from the stage config, language, and voice config."""
-        from livekit.plugins import sarvam  # lazy import (heavy)
-
         model = stage_cfg.get("model", "bulbul:v2")
         pricing_key = stage_cfg.get("pricing_key", f"sarvam/{model}")
         options = dict(stage_cfg.get("options") or {})

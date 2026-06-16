@@ -1,9 +1,10 @@
 """Cost-vs-performance comparison across pipelines (CLAUDE.md §9.4).
 
-Aggregates the per-turn `telemetry` rows (tagged by pipeline) plus captured fields into
-one summary row per pipeline: number of sessions/turns, **median cost per intake**, p50/p95
-**end-to-end latency**, and average **completion rate**. This is the artifact that answers
-"which pipeline for production?" from real sessions.
+Aggregates the per-turn `telemetry` rows (STT/LLM/TTS) plus the per-session LiveKit transport
+cost into one **all-in** summary per pipeline: sessions/turns, **median cost per intake**
+(STT+LLM+TTS+LiveKit), p50/p95 **end-to-end latency**, average **completion rate**, average
+**session length**, and average **LiveKit cost**. This is the artifact that answers "which
+pipeline for production?" from real sessions.
 
 Usage:
   - programmatic:  `from telemetry.compare import aggregate; aggregate()`
@@ -32,8 +33,10 @@ class PipelineStats:
     pipeline: str
     sessions: int
     turns: int
-    median_cost_per_intake_usd: float
-    avg_cost_per_intake_usd: float
+    median_cost_per_intake_usd: float  # all-in: STT + LLM + TTS + LiveKit
+    avg_cost_per_intake_usd: float  # all-in
+    avg_livekit_cost_usd: float
+    avg_session_seconds: float
     p50_latency_ms: float | None
     p95_latency_ms: float | None
     avg_completion_rate: float
@@ -70,10 +73,21 @@ def aggregate() -> list[PipelineStats]:
         telemetry = db.query(TelemetryRow).all()
         # completion per session = filled required fields / total required
         field_rows = db.query(IntakeFieldRow.session_id, IntakeFieldRow.field_id).all()
-        sessions = db.query(IntakeSession.id, IntakeSession.pipeline).all()
+        sessions = db.query(
+            IntakeSession.id,
+            IntakeSession.pipeline,
+            IntakeSession.livekit_cost,
+            IntakeSession.session_seconds,
+        ).all()
 
-    # session_id -> pipeline (prefer the session row; fall back to telemetry's tag)
-    session_pipeline: dict[str, str] = {sid: pipe for sid, pipe in sessions}
+    # session_id -> pipeline / LiveKit cost / duration (defaults 0 when not recorded yet)
+    session_pipeline: dict[str, str] = {}
+    session_lk: dict[str, float] = {}
+    session_secs: dict[str, float] = {}
+    for sid, pipe, lk, secs in sessions:
+        session_pipeline[sid] = pipe
+        session_lk[sid] = lk or 0.0
+        session_secs[sid] = secs or 0.0
 
     # session_id -> set of captured required field ids
     filled: dict[str, set[str]] = defaultdict(set)
@@ -95,11 +109,18 @@ def aggregate() -> list[PipelineStats]:
         turns[pipe] += 1
         session_ids[pipe].add(row.session_id)
 
+    # Fold the per-session LiveKit transport cost into each session's total (all-in).
+    for per_session in cost_by_session.values():
+        for sid in per_session:
+            per_session[sid] += session_lk.get(sid, 0.0)
+
     stats: list[PipelineStats] = []
     for pipe, per_session_cost in cost_by_session.items():
         costs = list(per_session_cost.values())
         sids = session_ids[pipe]
         completions = [len(filled.get(sid, set())) / n_required for sid in sids]
+        lk_costs = [session_lk.get(sid, 0.0) for sid in sids]
+        secs = [session_secs.get(sid, 0.0) for sid in sids]
         stats.append(
             PipelineStats(
                 pipeline=pipe,
@@ -107,6 +128,8 @@ def aggregate() -> list[PipelineStats]:
                 turns=turns[pipe],
                 median_cost_per_intake_usd=round(_median(costs), 6),
                 avg_cost_per_intake_usd=round(sum(costs) / len(costs), 6) if costs else 0.0,
+                avg_livekit_cost_usd=round(sum(lk_costs) / len(lk_costs), 6) if lk_costs else 0.0,
+                avg_session_seconds=round(sum(secs) / len(secs), 1) if secs else 0.0,
                 p50_latency_ms=_percentile(latencies[pipe], 50),
                 p95_latency_ms=_percentile(latencies[pipe], 95),
                 avg_completion_rate=(
@@ -134,6 +157,8 @@ def to_csv() -> str:
         "turns",
         "median_cost_per_intake_usd",
         "avg_cost_per_intake_usd",
+        "avg_livekit_cost_usd",
+        "avg_session_seconds",
         "p50_latency_ms",
         "p95_latency_ms",
         "avg_completion_rate",
@@ -150,16 +175,17 @@ def format_table() -> str:
     if not stats:
         return "No telemetry yet. Run some sessions first."
     header = (
-        f"{'pipeline':<18}{'sess':>5}{'turns':>6}{'med $/intake':>14}"
-        f"{'p50 ms':>9}{'p95 ms':>9}{'completion':>12}"
+        f"{'pipeline':<20}{'sess':>5}{'turns':>6}{'med $/intake(all-in)':>22}"
+        f"{'lk $':>10}{'sec':>7}{'p50 ms':>9}{'p95 ms':>9}{'compl':>8}"
     )
     lines = [header, "-" * len(header)]
     for s in stats:
         lines.append(
-            f"{s.pipeline:<18}{s.sessions:>5}{s.turns:>6}"
-            f"{s.median_cost_per_intake_usd:>14.6f}"
+            f"{s.pipeline:<20}{s.sessions:>5}{s.turns:>6}"
+            f"{s.median_cost_per_intake_usd:>22.6f}"
+            f"{s.avg_livekit_cost_usd:>10.6f}{s.avg_session_seconds:>7.0f}"
             f"{(s.p50_latency_ms or 0):>9.0f}{(s.p95_latency_ms or 0):>9.0f}"
-            f"{s.avg_completion_rate * 100:>11.0f}%"
+            f"{s.avg_completion_rate * 100:>7.0f}%"
         )
     return "\n".join(lines)
 

@@ -20,6 +20,9 @@ updates never touch code and sessions can be re-costed. Pure Python, unit-tested
   the remaining fresh input at the full rate, plus output. `cached_tokens=0` reproduces the
   no-caching cost (back-compatible with callers/tests that omit it).
 - **`tts_cost(characters, key)`** — characters × usd_per_character.
+- **`livekit_cost(session_seconds, human_participants=1, key="livekit/cloud")`** — LiveKit Cloud
+  transport: minutes × (agent_minute + human_participants × participant_minute). Per-minute, so
+  it scales with session length, not turns.
 
 ## Gotchas / TODOs
 - Null prices (Sarvam LLM, ElevenLabs $/char) → 0.0 with a warning; fill them before costing

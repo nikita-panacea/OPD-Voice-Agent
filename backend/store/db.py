@@ -54,6 +54,9 @@ class IntakeSession(Base):
     status: Mapped[str] = mapped_column(String, default="active")  # active|completed|handoff
     created_at: Mapped[datetime] = mapped_column(DateTime, default=_utcnow)
     completed_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    # Session duration + LiveKit Cloud transport cost (per-minute, not per-turn). NO PHI.
+    session_seconds: Mapped[float | None] = mapped_column(Float, nullable=True)
+    livekit_cost: Mapped[float | None] = mapped_column(Float, nullable=True)
 
     fields: Mapped[list[IntakeFieldRow]] = relationship(
         back_populates="session", cascade="all, delete-orphan"
@@ -109,6 +112,25 @@ class ReportRow(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, default=_utcnow)
 
 
+class TranscriptRow(Base):
+    """One conversation utterance (patient or agent).
+
+    PHI WARNING: this is verbatim clinical content (the full conversation). Access-restrict it,
+    apply the same retention policy as IntakeFieldRow/ReportRow (DATA_RETENTION_DAYS), and
+    disable capture via PERSIST_TRANSCRIPT for stricter deployments. Never copy into telemetry
+    or logs (§9).
+    """
+
+    __tablename__ = "transcripts"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    session_id: Mapped[str] = mapped_column(ForeignKey("intake_sessions.id"))
+    seq: Mapped[int] = mapped_column(Integer, default=0)
+    role: Mapped[str] = mapped_column(String)  # "patient" | "agent"
+    text: Mapped[str] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=_utcnow)
+
+
 def _make_engine():
     """Create the SQLAlchemy engine, adding SQLite-specific connect args when needed."""
     url = get_settings().database_url
@@ -120,9 +142,29 @@ _engine = _make_engine()
 SessionLocal = sessionmaker(bind=_engine, expire_on_commit=False, future=True)
 
 
+def _add_missing_columns() -> None:
+    """Lightweight migration: add columns introduced after a DB was first created.
+
+    SQLite `create_all` creates missing *tables* but not new *columns* on existing tables, so we
+    add them with idempotent ALTERs (preserves existing dev data — no need to delete opd.db).
+    """
+    from sqlalchemy import inspect, text
+
+    insp = inspect(_engine)
+    if "intake_sessions" not in insp.get_table_names():
+        return
+    existing = {c["name"] for c in insp.get_columns("intake_sessions")}
+    to_add = {"session_seconds": "FLOAT", "livekit_cost": "FLOAT"}
+    with _engine.begin() as conn:
+        for name, sqltype in to_add.items():
+            if name not in existing:
+                conn.execute(text(f"ALTER TABLE intake_sessions ADD COLUMN {name} {sqltype}"))
+
+
 def init_db() -> None:
-    """Create all tables if they do not exist (idempotent)."""
+    """Create all tables if they do not exist (idempotent), then apply column migrations."""
     Base.metadata.create_all(_engine)
+    _add_missing_columns()
 
 
 @contextmanager

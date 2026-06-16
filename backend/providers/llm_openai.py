@@ -9,6 +9,8 @@ from __future__ import annotations
 
 from typing import Any
 
+from livekit.plugins import openai
+
 from providers.base import ProviderMeter, Stage, StageBuild
 
 
@@ -19,8 +21,6 @@ class OpenAILLMProvider:
 
     def build(self, stage_cfg: dict[str, Any], language: str) -> StageBuild:
         """Construct `openai.LLM` from the stage config (language is prompt-driven, not here)."""
-        from livekit.plugins import openai  # lazy import (heavy)
-
         model = stage_cfg.get("model", "gpt-4.1")
         pricing_key = stage_cfg.get("pricing_key", f"openai/{model}")
         options = dict(stage_cfg.get("options") or {})

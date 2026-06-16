@@ -10,15 +10,17 @@ guardrail: **no raw PHI in logs**.
 - **In:** the configured log level. **Out:** configured global logging + logger instances.
 
 ## Walkthrough
-- **`configure_logging()`** — reads `LOG_LEVEL`, sets up stdlib `logging.basicConfig`, then
-  configures structlog with a processor chain: merge contextvars → add level → ISO timestamp →
-  stack/exception rendering → console renderer. Uses a filtering bound logger for the level and
-  caches loggers on first use. Call exactly once at worker/API startup.
-- **`get_logger(name)`** — thin wrapper over `structlog.get_logger` returning a bound logger
-  for a module.
+- **`configure_logging(log_name="app")`** — reads `LOG_LEVEL`; routes structlog through stdlib
+  via `ProcessorFormatter` so two handlers can render the same events differently:
+  - **console** — human-readable `ConsoleRenderer` (terminal).
+  - **file** — `backend/logs/<log_name>.jsonl`, `JSONRenderer`, `RotatingFileHandler`
+    (10 MB × 5). Wrapped in try/except so a filesystem problem never breaks the app.
+  The worker calls `configure_logging("agent")`, the API `configure_logging("api")`, so the two
+  processes write separate files (no cross-process contention). Replaces root handlers each call
+  (safe under uvicorn reload).
+- **`get_logger(name)`** — thin wrapper over `structlog.get_logger`.
 
 ## Gotchas / TODOs
-- Currently uses `ConsoleRenderer` (human-readable). For production, swap to
-  `JSONRenderer` for log aggregation.
 - The "no PHI" rule is a convention enforced by code review — log counts/ids/costs, never
-  transcript or field text.
+  transcript or field text (transcript text lives only in the `transcripts` table).
+- `logs/` is git-ignored; keep it out of OneDrive sync to avoid rotation/lock issues.

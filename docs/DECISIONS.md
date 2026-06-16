@@ -26,6 +26,30 @@ Sarvam TTS, and showed the re-sent system prompt makes prompt caching the main L
 streaming. Caching realized only if the provider returns `prompt_cached_tokens` (stable system
 prompt + tools makes this likely on OpenAI/Gemini).
 
+## ADR-0012 — All-in cost (incl. LiveKit), full transcript, rotating file logs
+
+**Status:** accepted (2026-06-16).
+**Context:** `opd.db`/`/api/compare` reported only STT/LLM/TTS cost (no LiveKit), the full
+conversation wasn't persisted, and logs were stdout-only.
+**Decisions:**
+1. **LiveKit cost** — added a `livekit` section to `pricing.yaml` ($0.01/agent-min +
+   $0.0004/participant-min, Build/PAYG, verified 2026-06-15), `cost.livekit_cost()`, and
+   `session_seconds`/`livekit_cost` columns on `intake_sessions` (set at session end from
+   wall-clock). `compare.py` folds LiveKit into an **all-in** cost/intake and reports
+   `avg_livekit_cost_usd` + `avg_session_seconds`. A lightweight `init_db` ALTER migration adds
+   the new columns to existing DBs (no data loss).
+2. **Full transcript** — new `transcripts` table + `intake/transcript.py` `TranscriptRecorder`
+   (subscribes to `conversation_item_added`), staff endpoint `GET /api/sessions/{id}/transcript`.
+   **PHI:** access-restricted, retention-bound, opt-out via `PERSIST_TRANSCRIPT=false`; transcript
+   text never enters logs/telemetry.
+3. **Rotating file logs** — `logging_setup` now writes both a human console and a rotating
+   `backend/logs/<name>.jsonl` (worker→`agent.jsonl`, API→`api.jsonl`); `logs/` git-ignored.
+**Verified:** 63 tests pass (livekit_cost, all-in compare, transcript record/recorder); CLI +
+`/api/compare` show the new columns; JSONL log file written; transcript endpoint returns ordered
+turns.
+**Note:** LiveKit cost is modelled per-minute on the Build/PAYG rate — confirm your tier
+(Scale is required for HIPAA and is cheaper). Keep `logs/` and `.venv` out of OneDrive sync.
+
 ## ADR-0010 — Marathi enabled end-to-end (VAD turn-detection fallback)
 
 **Status:** accepted (2026-06-15). **Supersedes ADR-0002 and ADR-0008's Marathi deferral.**

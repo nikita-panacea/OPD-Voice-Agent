@@ -96,6 +96,20 @@ class IntakeState:
                 row.status = status
                 row.completed_at = datetime.now(UTC)
 
+    def record_session_cost(self, session_seconds: float, livekit_cost: float) -> None:
+        """Persist session duration + LiveKit transport cost (called at session end)."""
+        with session_scope() as db:
+            row = db.get(IntakeSession, self.session_id)
+            if row is not None:
+                row.session_seconds = session_seconds
+                row.livekit_cost = livekit_cost
+        log.info(
+            "session_cost_recorded",
+            session=self.session_id,
+            seconds=round(session_seconds, 1),
+            livekit_cost=livekit_cost,
+        )
+
     def _persist_field(self, field_id: str) -> None:
         fv = self.fields[field_id]
         with session_scope() as db:

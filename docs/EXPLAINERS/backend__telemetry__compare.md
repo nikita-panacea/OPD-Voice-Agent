@@ -15,10 +15,11 @@ the artifact for "which pipeline for production?". Pure DB reads — no clinical
 - **`PipelineStats`** — dataclass with the per-pipeline metrics.
 - **`_percentile(values, pct)`** — nearest-rank percentile (None if empty).
 - **`_median(values)`** — median (0.0 if empty).
-- **`aggregate()`** — loads telemetry + sessions + fields; computes per-session cost
-  (Σ stt+llm+tts over its turns) grouped by pipeline; gathers all turn latencies; computes
-  completion per session (filled required ÷ required); returns stats sorted by median
-  cost/intake (cheapest first).
+- **`aggregate()`** — loads telemetry + sessions (incl. `livekit_cost`/`session_seconds`) +
+  fields; computes per-session cost (Σ stt+llm+tts over its turns) grouped by pipeline, then
+  **folds in each session's LiveKit cost** so cost/intake is **all-in**; gathers turn latencies;
+  computes completion per session; also reports `avg_livekit_cost_usd` + `avg_session_seconds`.
+  Returns stats sorted by all-in median cost/intake (cheapest first).
 - **`to_dicts()` / `to_csv()`** — serializations for the API / spreadsheet export.
 - **`format_table()`** — human-readable CLI table.
 - **`_main()`** — `init_db()` then print the table (or CSV with `--csv`).

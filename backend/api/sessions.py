@@ -10,7 +10,7 @@ from fastapi import APIRouter, Depends, Header, HTTPException, Response
 
 from config.settings import get_settings
 from intake import report as report_mod
-from store.db import IntakeSession, session_scope
+from store.db import IntakeSession, TranscriptRow, session_scope
 
 router = APIRouter(prefix="/api/sessions", tags=["staff"])
 
@@ -57,3 +57,20 @@ def get_report_markdown(session_id: str) -> Response:
     except KeyError:
         raise HTTPException(status_code=404, detail="Unknown session") from None
     return Response(content=markdown, media_type="text/markdown")
+
+
+@router.get("/{session_id}/transcript", dependencies=[Depends(require_staff)])
+def get_transcript(session_id: str) -> list[dict]:
+    """Return the full ordered conversation transcript (PHI — staff-gated, retention-bound)."""
+    with session_scope() as db:
+        rows = (
+            db.query(TranscriptRow)
+            .filter_by(session_id=session_id)
+            .order_by(TranscriptRow.seq)
+            .all()
+        )
+        return [
+            {"seq": r.seq, "role": r.role, "text": r.text,
+             "created_at": r.created_at.isoformat() if r.created_at else None}
+            for r in rows
+        ]

@@ -64,3 +64,19 @@ def llm_cost(
 def tts_cost(characters: int, pricing_key: str) -> float:
     """USD cost for TTS characters synthesized."""
     return round(characters * _price("tts", pricing_key, "usd_per_character"), 8)
+
+
+def livekit_cost(
+    session_seconds: float,
+    human_participants: int = 1,
+    pricing_key: str = "livekit/cloud",
+) -> float:
+    """USD LiveKit Cloud transport cost for one session.
+
+    Cost = minutes * (agent_session_minute + human_participants * participant_minute). One
+    agent + one patient is the default. Per-minute, so it scales with session length, not turns.
+    """
+    minutes = session_seconds / 60.0
+    agent_rate = _price("livekit", pricing_key, "usd_per_agent_minute")
+    participant_rate = _price("livekit", pricing_key, "usd_per_participant_minute")
+    return round(minutes * (agent_rate + human_participants * participant_rate), 8)

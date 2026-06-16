@@ -1,11 +1,12 @@
-/** Shows who is speaking: the agent (talking), the patient (listening), or idle. */
+/** Shows who is speaking (agent / patient / idle) and whether the mic is publishing. */
 
 interface Props {
   agentSpeaking: boolean;
   patientSpeaking: boolean;
+  micPublished: boolean;
 }
 
-export function MicIndicator({ agentSpeaking, patientSpeaking }: Props) {
+export function MicIndicator({ agentSpeaking, patientSpeaking, micPublished }: Props) {
   const { label, cls } = agentSpeaking
     ? { label: "Assistant speaking…", cls: "dot agent" }
     : patientSpeaking
@@ -16,6 +17,9 @@ export function MicIndicator({ agentSpeaking, patientSpeaking }: Props) {
     <div className="mic-indicator">
       <span className={cls} />
       <span>{label}</span>
+      <span className={micPublished ? "mic-badge on" : "mic-badge off"}>
+        {micPublished ? "🎤 mic on" : "🎤 mic off"}
+      </span>
     </div>
   );
 }

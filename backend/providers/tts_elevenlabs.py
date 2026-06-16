@@ -9,6 +9,8 @@ from __future__ import annotations
 
 from typing import Any
 
+from livekit.plugins import elevenlabs
+
 from config.settings import get_settings
 from providers.base import ProviderMeter, Stage, StageBuild
 
@@ -22,8 +24,6 @@ class ElevenLabsTTSProvider:
 
     def build(self, stage_cfg: dict[str, Any], language: str) -> StageBuild:
         """Construct `elevenlabs.TTS` from the stage config and resolved language."""
-        from livekit.plugins import elevenlabs  # lazy import (heavy)
-
         model = stage_cfg.get("model", "eleven_flash_v2_5")
         pricing_key = stage_cfg.get("pricing_key", f"elevenlabs/{model}")
         options = dict(stage_cfg.get("options") or {})

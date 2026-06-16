@@ -20,21 +20,25 @@ module (not the agent script), and it downloads files for all installed plugins.
 
 from __future__ import annotations
 
+import time
+
 from dotenv import load_dotenv
 from livekit.agents import AgentServer, JobContext, RoomInputOptions, cli
 
 from agent.intake_agent import IntakeAgent
 from config.settings import ENV_FILE, get_settings
 from intake.state import IntakeState
+from intake.transcript import TranscriptRecorder
 from logging_setup import configure_logging, get_logger
 from providers.registry import build_session
+from telemetry import cost
 from telemetry.meter import SessionMeter
 
 # Load the project-root .env into os.environ. The LiveKit SDK (AgentServer reads LIVEKIT_URL/
 # API_KEY/API_SECRET) and the provider plugins (OPENAI_API_KEY / SARVAM_API_KEY / DEEPGRAM_API_KEY
 # / GOOGLE_API_KEY) read os.environ directly — pydantic-settings alone does not populate it.
 load_dotenv(ENV_FILE)
-configure_logging()
+configure_logging("agent")
 log = get_logger("agent.worker")
 
 server = AgentServer()
@@ -91,10 +95,19 @@ async def entrypoint(ctx: JobContext) -> None:
     meter = SessionMeter(ctx.room.name, settings.active_pipeline, built.meters)
     meter.attach(built.session)
 
-    async def _flush_telemetry() -> None:
-        meter.close()
+    # Full conversation transcript (PHI) — opt-out via PERSIST_TRANSCRIPT=false.
+    if settings.persist_transcript:
+        TranscriptRecorder(ctx.room.name).attach(built.session)
 
-    ctx.add_shutdown_callback(_flush_telemetry)
+    # Measure session wall-clock for the LiveKit (per-minute) cost; finalize on shutdown.
+    start_time = time.monotonic()
+
+    async def _on_shutdown() -> None:
+        meter.close()
+        duration = time.monotonic() - start_time
+        state.record_session_cost(duration, cost.livekit_cost(duration))
+
+    ctx.add_shutdown_callback(_on_shutdown)
 
     await built.session.start(agent=agent, room=ctx.room, room_input_options=room_input)
     # The agent greets + asks for consent via IntakeAgent.on_enter (fires on session start).

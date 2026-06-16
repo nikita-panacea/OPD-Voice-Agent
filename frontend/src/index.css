@@ -48,6 +48,9 @@ button.end { background: #b4232f; margin-top: 12px; }
 .session .main { flex: 1; }
 
 .mic-indicator { display: flex; align-items: center; gap: 8px; font-size: 0.9rem; margin-bottom: 8px; }
+.mic-badge { font-size: 0.75rem; padding: 2px 8px; border-radius: 999px; margin-left: auto; }
+.mic-badge.on { background: #e8f6ec; color: #1f6b35; border: 1px solid #a7d7b5; }
+.mic-badge.off { background: #fdecec; color: #8a1f1f; border: 1px solid #e7a3a3; }
 .dot { width: 12px; height: 12px; border-radius: 50%; display: inline-block; }
 .dot.agent { background: #2563eb; animation: pulse 1s infinite; }
 .dot.patient { background: #16a34a; animation: pulse 1s infinite; }

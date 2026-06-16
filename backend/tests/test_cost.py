@@ -2,7 +2,7 @@
 
 import pytest
 
-from telemetry.cost import llm_cost, stt_cost, tts_cost
+from telemetry.cost import livekit_cost, llm_cost, stt_cost, tts_cost
 
 
 def test_stt_cost_per_second() -> None:
@@ -46,6 +46,13 @@ def test_caching_is_cheaper_than_no_caching() -> None:
     no_cache = llm_cost(10_000, 100, "google/gemini-2.5-flash")
     with_cache = llm_cost(10_000, 100, "google/gemini-2.5-flash", cached_tokens=8_000)
     assert with_cache < no_cache
+
+
+def test_livekit_cost_per_minute() -> None:
+    # $0.01/agent-min + $0.0004/participant-min; 60s = 1 min, 1 patient.
+    assert livekit_cost(60) == pytest.approx(0.01 + 0.0004)
+    assert livekit_cost(120) == pytest.approx(2 * (0.01 + 0.0004))
+    assert livekit_cost(0) == 0.0
 
 
 def test_cached_tokens_capped_at_input() -> None:

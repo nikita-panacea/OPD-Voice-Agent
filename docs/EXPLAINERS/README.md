@@ -64,8 +64,12 @@ walkthrough). A file is not "done" until its explainer exists and matches the co
 
 ### report (Phase G)
 - [backend/intake/report.py](backend__intake__report.md) — structured report + Markdown
-- [backend/api/sessions.py](backend__api__sessions.md) — staff list + report endpoints
+- [backend/api/sessions.py](backend__api__sessions.md) — staff list + report + transcript endpoints
 - [backend/tests/test_report_schema.py](backend__intake__report.md) — report tests
+
+### transcript (PHI)
+- [backend/intake/transcript.py](backend__intake__transcript.md) — full conversation persistence
+- [backend/tests/test_transcript.py](backend__intake__transcript.md) — transcript tests
 
 ### Languages: Hindi + Marathi (Phase H + Marathi)
 en/hi/mr reuse the multilingual support across Phases C–G (no new source files): Saaras

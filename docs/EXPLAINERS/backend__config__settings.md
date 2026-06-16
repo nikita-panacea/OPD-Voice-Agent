@@ -20,7 +20,8 @@ typed, and easy to stub in tests.
   default (empty string for secrets, sensible defaults for app settings). `model_config`
   points at the root `.env`, is case-insensitive, and ignores unknown keys so extra env vars
   don't crash startup. Field names map to UPPER_SNAKE env vars (e.g. `livekit_url` ←
-  `LIVEKIT_URL`).
+  `LIVEKIT_URL`). Includes `persist_transcript` (bool, default true) — the PHI control for
+  full-transcript capture.
 - **`get_settings()`** — `@lru_cache`d factory returning the process-wide singleton. Cached so
   the `.env` is read once; tests can clear the cache to inject overrides.
 - **`_load_yaml(name)`** — opens a YAML file in `CONFIG_DIR` and returns the parsed dict (or

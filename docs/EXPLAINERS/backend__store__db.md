@@ -18,12 +18,18 @@ a transactional `session_scope()` context manager. SQLite for dev (→ Postgres 
   `metadata` drives `create_all`.
 - **`IntakeSession`** — one row per intake: `id`, `language`, `pipeline`, `consent_given`,
   `urgent_flag` + `urgent_reason` (red-flag escalation), `status` (active/completed/handoff),
-  timestamps. Has a cascade `relationship` to its fields.
+  timestamps, plus **`session_seconds`** + **`livekit_cost`** (per-session LiveKit transport cost,
+  set at session end). Has a cascade `relationship` to its fields.
 - **`IntakeFieldRow`** — a captured §8.1 field: `field_id`, `value`, `confidence`,
   `confirmed`, `updated_at`. This is clinical content (access-restricted).
 - **`TelemetryRow`** — per-turn metrics: STT seconds, LLM in/out/cached tokens, TTS chars,
   per-component costs, end-to-end latency. **Contains no clinical content** by design (§9).
 - **`ReportRow`** — the generated report stored as both `json_blob` and `markdown`.
+- **`TranscriptRow`** — one utterance (seq, role patient/agent, text). **PHI** — verbatim
+  conversation; access-restricted + retention-bound.
+- **`_add_missing_columns()`** — lightweight idempotent migration run by `init_db`: `create_all`
+  adds missing *tables* but not new *columns*, so this ALTERs `intake_sessions` to add
+  `session_seconds`/`livekit_cost` on pre-existing DBs (no need to delete `opd.db`).
 - **`_make_engine()`** — builds the engine from `DATABASE_URL`, adding
   `check_same_thread=False` for SQLite so the async agent worker and the API can share it.
 - **`_engine` / `SessionLocal`** — module-level engine + session factory

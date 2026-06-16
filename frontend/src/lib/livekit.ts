@@ -219,6 +219,7 @@ export function useIntakeRoom() {
     handoff,
     agentSpeaking,
     patientSpeaking,
+    micPublished,
     connect,
     disconnect,
   };

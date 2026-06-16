@@ -83,6 +83,16 @@ llm:
     as_of: "2026-06-14"
     source: "TODO: verify on https://www.sarvam.ai/api-pricing"
 
+# LiveKit Cloud transport — billed per minute (agent session minutes + human participant
+# minutes). These are Build/PAYG rates verified 2026-06-15; Scale tier is ~15-25% lower and is
+# required for HIPAA. Cost = minutes * (agent_minute + human_participants * participant_minute).
+livekit:
+  "livekit/cloud":
+    usd_per_agent_minute: 0.01
+    usd_per_participant_minute: 0.0004
+    as_of: "2026-06-15"
+    source: "https://livekit.com/pricing (Build/PAYG)"
+
 tts:
   # Sarvam Bulbul — POC default TTS.
   "sarvam/bulbul:v2":

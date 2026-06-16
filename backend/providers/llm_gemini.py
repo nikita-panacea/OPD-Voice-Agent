@@ -8,6 +8,8 @@ from __future__ import annotations
 
 from typing import Any
 
+from livekit.plugins import google
+
 from providers.base import ProviderMeter, Stage, StageBuild
 
 
@@ -18,8 +20,6 @@ class GeminiLLMProvider:
 
     def build(self, stage_cfg: dict[str, Any], language: str) -> StageBuild:
         """Construct `google.LLM` from the stage config (language is prompt-driven)."""
-        from livekit.plugins import google  # lazy import (heavy)
-
         model = stage_cfg.get("model", "gemini-2.5-flash")
         pricing_key = stage_cfg.get("pricing_key", f"google/{model}")
         options = dict(stage_cfg.get("options") or {})

@@ -21,6 +21,7 @@ export function Intake() {
     handoff,
     agentSpeaking,
     patientSpeaking,
+    micPublished,
     connect,
     disconnect,
   } = useIntakeRoom();
@@ -63,7 +64,18 @@ export function Intake() {
                 A member of the hospital staff will assist you shortly.
               </div>
             )}
-            <MicIndicator agentSpeaking={agentSpeaking} patientSpeaking={patientSpeaking} />
+            <MicIndicator
+              agentSpeaking={agentSpeaking}
+              patientSpeaking={patientSpeaking}
+              micPublished={micPublished}
+            />
+            {!micPublished && (
+              <p className="error">
+                Microphone not detected by the app. Allow mic access for this site and click
+                Reconnect.
+              </p>
+            )}
+            {error && <p className="error">{error}</p>}
             <TranscriptView captions={captions} />
             <button className="end" onClick={disconnect}>
               End conversation

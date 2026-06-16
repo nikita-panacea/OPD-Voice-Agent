@@ -10,6 +10,8 @@ from __future__ import annotations
 
 from typing import Any
 
+from livekit.plugins import openai
+
 from providers.base import ProviderMeter, Stage, StageBuild
 
 _LANG_CODES = {"en": "en", "hi": "hi", "mr": "mr"}
@@ -22,8 +24,6 @@ class WhisperSTTProvider:
 
     def build(self, stage_cfg: dict[str, Any], language: str) -> StageBuild:
         """Construct `openai.STT` from the stage config and resolved language."""
-        from livekit.plugins import openai  # lazy import (heavy)
-
         model = stage_cfg.get("model", "gpt-4o-mini-transcribe")
         pricing_key = stage_cfg.get("pricing_key", f"openai/{model}")
         options = dict(stage_cfg.get("options") or {})

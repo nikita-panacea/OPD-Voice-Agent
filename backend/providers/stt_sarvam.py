@@ -10,6 +10,8 @@ from __future__ import annotations
 
 from typing import Any
 
+from livekit.plugins import sarvam
+
 from providers.base import ProviderMeter, Stage, StageBuild
 
 # Map our short language codes to Sarvam STT language codes (verified: hi-IN, mr-IN, en-IN).
@@ -23,8 +25,6 @@ class SarvamSTTProvider:
 
     def build(self, stage_cfg: dict[str, Any], language: str) -> StageBuild:
         """Construct `sarvam.STT` from the stage config and resolved language."""
-        from livekit.plugins import sarvam  # lazy import (heavy)
-
         model = stage_cfg.get("model", "saaras:v3")
         pricing_key = stage_cfg.get("pricing_key", f"sarvam/{model}")
         options = dict(stage_cfg.get("options") or {})

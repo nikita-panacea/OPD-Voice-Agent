@@ -60,6 +60,23 @@ def test_aggregate_groups_and_costs_by_pipeline() -> None:
     assert b.avg_completion_rate == 0.0
 
 
+def test_all_in_cost_includes_livekit() -> None:
+    pipe = f"cmp-lk-{uuid.uuid4().hex[:6]}"
+    sid = f"{pipe}-s1"
+    _seed(pipe, sid, [0.10], [100.0], ["chief_complaint"])  # telemetry cost 0.10
+    with session_scope() as db:
+        row = db.get(IntakeSession, sid)
+        row.livekit_cost = 0.05
+        row.session_seconds = 300.0
+
+    stats = {s.pipeline: s for s in compare.aggregate()}
+    a = stats[pipe]
+    assert a.avg_livekit_cost_usd == pytest.approx(0.05)
+    assert a.avg_session_seconds == pytest.approx(300.0)
+    # all-in cost/intake = telemetry (0.10) + LiveKit (0.05)
+    assert a.median_cost_per_intake_usd == pytest.approx(0.15)
+
+
 def test_outputs_serialize() -> None:
     pipe = f"cmp-csv-{uuid.uuid4().hex[:6]}"
     _seed(pipe, f"{pipe}-s1", [0.5], [150.0], ["chief_complaint"])

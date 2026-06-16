@@ -11,6 +11,8 @@ against the price set that was live then.
   `usd_per_1m_cached_input` (prompt-cache hit rate; ≈0.25× input for OpenAI, ≈0.10× for Gemini).
   If omitted, cached tokens bill at the full input price.
 - `tts:` keyed by `provider/model` → `usd_per_character`.
+- `livekit:` keyed by `livekit/cloud` → `usd_per_agent_minute` + `usd_per_participant_minute`
+  (transport, billed per minute; read by `cost.livekit_cost`).
 - Every entry carries `as_of` (date) + `source` (URL/notes) for auditability.
 - The keys here match each pipeline stage's `pricing_key` in `pipelines.yaml`.
 

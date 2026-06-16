@@ -19,7 +19,7 @@ from store.db import init_db
 
 # Load .env into os.environ (consistent with the worker; harmless for the API).
 load_dotenv(ENV_FILE)
-configure_logging()
+configure_logging("api")
 log = get_logger("api")
 
 

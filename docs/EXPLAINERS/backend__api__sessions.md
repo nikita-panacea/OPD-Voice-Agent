@@ -16,6 +16,8 @@ Gated by a shared `STAFF_AUTH_SECRET` (POC-grade auth).
   return the structured JSON; 404 for unknown sessions.
 - **`get_report_markdown(session_id)`** (`GET /api/sessions/{id}/report.md`) — same, returned as
   `text/markdown`.
+- **`get_transcript(session_id)`** (`GET /api/sessions/{id}/transcript`) — the full ordered
+  conversation (seq/role/text). **PHI** — staff-gated, retention-bound.
 
 ## Gotchas / TODOs
 - Shared-secret auth is POC-only; Phase 9 replaces it with real staff auth + access control +

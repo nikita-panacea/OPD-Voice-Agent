@@ -20,8 +20,10 @@ with Krisp BVC noise cancellation, and greets the patient with the consent ask.
   the participant; resolve language; create `IntakeState(session_id=room.name, ...)` and
   `persist_session()`; `build_session(active_pipeline, language)`; create `IntakeAgent(state,
   language)` and `bind_room(ctx.room)`; build `RoomInputOptions` with Krisp if available;
-  attach a `SessionMeter` for per-turn telemetry and register a shutdown callback to flush it;
-  `session.start(agent, room, room_input_options)`; `session.generate_reply(greeting_instructions)`.
+  attach a `SessionMeter` for per-turn telemetry, attach a `TranscriptRecorder` (when
+  `PERSIST_TRANSCRIPT`), record a start time, and register a shutdown callback that flushes the
+  meter and records `session_seconds` + LiveKit cost (`cost.livekit_cost`) on the session row;
+  `session.start(agent, room, room_input_options)`. The agent greets via `IntakeAgent.on_enter`.
 - **`__main__`** — `cli.run_app(server)` (verified signature accepts `AgentServer`).
 
 ## Gotchas / TODOs

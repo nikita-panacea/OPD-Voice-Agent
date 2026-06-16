@@ -21,6 +21,8 @@ a dropped call and the report generator can read a finished session.
   - **`confirm_field(id)`** — mark a critical field confirmed (post read-back).
   - **`raise_urgent(reason)`** — set the URGENT flag in memory + DB (logged at warning).
   - **`finalize(status)`** — set status + `completed_at`.
+  - **`record_session_cost(session_seconds, livekit_cost)`** — persist session duration + LiveKit
+    transport cost on the session row (called from the worker's shutdown callback).
   - **`_persist_field(id)`** — upsert the `IntakeFieldRow` (query by session+field).
   - **`completion_rate()`** — filled required ÷ total required (0–1); feeds telemetry/smoothness.
   - **`field_panel_payload(id)`** — small dict (localized label) pushed to the live UI panel.

@@ -15,6 +15,14 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
+# LiveKit imports are top-level (not lazy) so plugin registration runs on the worker process's
+# MAIN thread at import time. Importing them lazily inside build_session (a job thread) triggers
+# "Plugins must be registered on the main thread".
+from livekit.agents import AgentSession, TurnHandlingOptions
+from livekit.agents.voice.turn import EndpointingOptions
+from livekit.plugins import noise_cancellation, silero
+from livekit.plugins.turn_detector.multilingual import MultilingualModel
+
 from config.settings import get_pipeline
 from logging_setup import get_logger
 from providers import (
@@ -106,8 +114,6 @@ def _load_krisp() -> Any | None:
     plugin or Cloud entitlement is missing.
     """
     try:
-        from livekit.plugins import noise_cancellation
-
         return noise_cancellation.BVC()
     except Exception as exc:  # noqa: BLE001 - degrade gracefully, log why
         log.warning("krisp_unavailable", error=str(exc))
@@ -126,19 +132,9 @@ def build_session(pipeline_name: str, language: str) -> BuiltSession:
     llm_b = _resolve(LLM_PROVIDERS, cfg["llm"], "LLM").build(cfg["llm"], language)
     tts_b = _resolve(TTS_PROVIDERS, cfg["tts"], "TTS").build(cfg["tts"], language)
 
-    # Lazy heavy imports so this module imports without the full agent stack.
-    from livekit.agents import AgentSession, TurnHandlingOptions
-    from livekit.agents.voice.turn import EndpointingOptions
-    from livekit.plugins import silero
-
     # Semantic turn detection for supported languages; VAD endpointing fallback for the rest
     # (e.g. Marathi — not in the MultilingualModel set). Both honor the endpointing delays.
-    if supports_turn_detector(language):
-        from livekit.plugins.turn_detector.multilingual import MultilingualModel
-
-        turn_detection: Any = MultilingualModel()
-    else:
-        turn_detection = "vad"
+    turn_detection: Any = MultilingualModel() if supports_turn_detector(language) else "vad"
 
     session = AgentSession(
         stt=stt_b.component,
