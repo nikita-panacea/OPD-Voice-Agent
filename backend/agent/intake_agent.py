@@ -28,6 +28,7 @@ from agent.prompts import (
 from config.settings import get_settings
 from intake import red_flags, report
 from intake.questions import critical_field_ids, get_field
+from intake.prompt_audio import PromptAudioResolver
 from intake.state import IntakeState
 from logging_setup import get_logger
 
@@ -48,6 +49,7 @@ class IntakeAgent(Agent):
         self._min_asr_confidence = settings.min_asr_confidence
         self._asr_low_confidence_limit = settings.asr_low_confidence_limit
         self._low_conf_streak = 0  # consecutive low-confidence (misheard) turns
+        self._prompt_audio = PromptAudioResolver()
 
     def bind_room(self, room: rtc.Room) -> None:
         """Give the agent the room handle so it can push live UI updates (set by the worker)."""
@@ -60,6 +62,8 @@ class IntakeAgent(Agent):
         the assistant before they say anything.
         """
         log.info("agent_on_enter_greeting", session=self._state.session_id, language=self._language)
+        if await self._try_play_predefined_prompt("consent"):
+            return
         await self.session.generate_reply(instructions=greeting_instructions(self._language))
 
     async def _publish(self, payload: dict) -> None:
@@ -72,6 +76,31 @@ class IntakeAgent(Agent):
             )
         except Exception as exc:  # noqa: BLE001 - UI update is best-effort
             log.warning("publish_data_failed", error=str(exc))
+
+    async def _try_play_predefined_prompt(
+        self, field_id: str, variant: str = "prompt"
+    ) -> bool:
+        """Ask the browser to play a pre-recorded prompt if one exists."""
+        prompt = self._prompt_audio.resolve(field_id, self._language, variant)
+        if prompt is None:
+            return False
+        await self._publish(
+            {
+                "type": "prompt_audio",
+                "field_id": prompt.field_id,
+                "variant": prompt.variant,
+                "url": prompt.url,
+                "text": prompt.text,
+            }
+        )
+        log.info(
+            "prompt_audio_published",
+            session=self._state.session_id,
+            field=field_id,
+            variant=variant,
+            url=prompt.url,
+        )
+        return True
 
     def _low_confidence_decision(self, confidence: float | None) -> str | None:
         """Decide what to do about an STT transcript's confidence (updates the streak).
@@ -135,6 +164,23 @@ class IntakeAgent(Agent):
 
     # ------------------------------------------------------------------ tools
     @function_tool
+    async def play_predefined_prompt(
+        self, context: RunContext, field_id: str, variant: str = "prompt"
+    ) -> str:
+        """Play a known checklist prompt in the browser before using LiveKit TTS.
+
+        Args:
+            field_id: the checklist field id to ask next.
+            variant: "prompt" for the normal question, or "simpler" for a plain re-ask.
+        """
+        if await self._try_play_predefined_prompt(field_id, variant):
+            raise StopResponse
+        return (
+            f"No pre-recorded audio found for {field_id} ({variant}). "
+            "Ask the patient this question normally now."
+        )
+
+    @function_tool
     async def record_consent(self, context: RunContext, granted: bool) -> str:
         """Record whether the patient consents to the automated intake.
 
@@ -144,7 +190,11 @@ class IntakeAgent(Agent):
         self._state.set_consent(granted)
         await self._publish({"type": "consent", "granted": granted})
         if granted:
-            return "Consent granted. Begin collecting the chief complaint."
+            return (
+                "Consent granted. Before asking for chief_complaint, call "
+                "play_predefined_prompt with field_id='chief_complaint' and variant='prompt'. "
+                "If no audio is available, ask normally."
+            )
         return (
             "Consent declined. Do not collect any health information. Politely offer to connect "
             "the patient to hospital staff and end."
@@ -168,7 +218,11 @@ class IntakeAgent(Agent):
                 f"Saved {field_id}. This is a critical field — read it back to the patient and "
                 "ask them to confirm, then call confirm_field."
             )
-        return f"Saved {field_id}. Continue with the next needed field."
+        return (
+            f"Saved {field_id}. Continue with the next needed field. Before asking the next "
+            "checklist question, call play_predefined_prompt for that field. If no audio is "
+            "available, ask normally."
+        )
 
     @function_tool
     async def save_intake_field(
@@ -188,7 +242,11 @@ class IntakeAgent(Agent):
         """Mark a critical field as confirmed after the patient verifies the read-back."""
         self._state.confirm_field(field_id)
         await self._publish(self._state.field_panel_payload(field_id))
-        return f"Confirmed {field_id}."
+        return (
+            f"Confirmed {field_id}. Continue with the next needed field. Before asking the next "
+            "checklist question, call play_predefined_prompt for that field. If no audio is "
+            "available, ask normally."
+        )
 
     @function_tool
     async def flag_urgent(self, context: RunContext, reason: str) -> str:

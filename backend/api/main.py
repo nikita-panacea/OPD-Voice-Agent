@@ -11,9 +11,10 @@ from contextlib import asynccontextmanager
 from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 from api import dashboard, sessions, tokens
-from config.settings import ENV_FILE
+from config.settings import ENV_FILE, get_settings
 from logging_setup import configure_logging, get_logger
 from store.db import init_db
 
@@ -45,6 +46,12 @@ app.add_middleware(
 app.include_router(tokens.router)
 app.include_router(sessions.router)
 app.include_router(dashboard.router)
+
+app.mount(
+    "/audio",
+    StaticFiles(directory=str(get_settings().audio_assets_dir), check_dir=False),
+    name="audio",
+)
 
 
 @app.get("/health")

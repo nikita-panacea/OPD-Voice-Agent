@@ -56,30 +56,35 @@ INTAKE_FIELDS: list[IntakeField] = [
         ftype=FieldType.YES_NO,
         is_consent_gate=True,
         label={"en": "Consent", "hi": "सहमति", "mr": "संमती"},
-        prompt={
-            "en": "Before we begin, do you agree to share your health information with the care team through this automated assistant?",
-            "hi": "शुरू करने से पहले, क्या आप इस स्वचालित सहायक के ज़रिए अपनी स्वास्थ्य जानकारी देखभाल टीम के साथ साझा करने के लिए सहमत हैं?",
-            "mr": "सुरुवात करण्यापूर्वी, या स्वयंचलित सहाय्यकाद्वारे तुमची आरोग्य माहिती काळजी घेणाऱ्या टीमसोबत सामायिक करण्यास तुमची संमती आहे का?",
+         prompt={
+            "en": "Hello, I am Dhara, an automated assistant collecting your intake information for "
+            "the care team. Your answers are recorded and transcribed for the doctor. Do you "
+            "agree to continue? Please press the button and say yes or no.",
+            "hi": "नमस्ते, मैं धारा हूँ, एक स्वचालित सहायिका जो देखभाल टीम के लिए आपकी जानकारी एकत्र कर रही हूँ। "
+            "आपके उत्तर रिकॉर्ड और लिखे जाते हैं। क्या आप जारी रखने के लिए सहमत हैं? बटन दबाकर हाँ या ना कहें।",
+            "mr": "नमस्कार, मी धारा, एक स्वयंचलित सहाय्यिका जी काळजी पथकासाठी तुमची माहिती गोळा करत आहे. "
+            "तुमची उत्तरे रेकॉर्ड व लिहिली जातात. तुम्ही पुढे जाण्यास सहमत आहात का? बटण दाबून हो किंवा नाही म्हणा.",
         },
         simpler_prompt={
-            "en": "Is it okay if I ask you some questions about your health and share your answers with your doctor? Please say yes or no.",
-            "hi": "क्या मैं आपके स्वास्थ्य के बारे में कुछ सवाल पूछ सकती हूँ और आपके जवाब आपके डॉक्टर को बता सकती हूँ? कृपया हाँ या ना कहें।",
-            "mr": "मी तुम्हाला तुमच्या आरोग्याबद्दल काही प्रश्न विचारले आणि तुमची उत्तरे तुमच्या डॉक्टरांना सांगितली तर चालेल का? कृपया हो किंवा नाही म्हणा.",
+            "en": "Is it okay for me to ask you some health questions and save your answers for "
+            "the doctor? Please press the button and say yes or no.",
+            "hi": "क्या मैं आपसे कुछ स्वास्थ्य प्रश्न पूछ सकती हूँ और उत्तर डॉक्टर के लिए सहेज सकती हूँ? हाँ या ना कहें।",
+            "mr": "मी तुम्हाला काही आरोग्यविषयक प्रश्न विचारू का आणि उत्तरे डॉक्टरांसाठी जतन करू का? हो किंवा नाही म्हणा.",
         },
     ),
     IntakeField(
         id="identity",
         ftype=FieldType.FREE_TEXT,
         label={"en": "Patient", "hi": "मरीज़", "mr": "रुग्ण"},
-        prompt={
-            "en": "Can you tell me your name, your age, and your sex?",
-            "hi": "क्या आप मुझे अपना नाम, उम्र और लिंग बता सकते हैं?",
-            "mr": "तुम्ही मला तुमचे नाव, वय आणि लिंग सांगू शकता का?",
+         prompt={
+            "en": "Please tell me your full name and age.",
+            "hi": "कृपया मुझे अपना पूरा नाम और उम्र बताएं।",
+            "mr": "कृपया तुमचे पूर्ण नाव आणि वय सांगा.",
         },
         simpler_prompt={
-            "en": "What is your name? And how old are you? For example: 'Asha, 45 years, female'.",
-            "hi": "आपका नाम क्या है? और आपकी उम्र कितनी है? उदाहरण के लिए: 'आशा, 45 वर्ष, महिला'।",
-            "mr": "तुमचे नाव काय आहे? आणि तुमचे वय किती आहे? उदाहरणार्थ: 'आशा, ४५ वर्षे, स्त्री'.",
+            "en": "What is your name, and how old are you? For example: 'Asha Patil, 45 years'.",
+            "hi": "आपका नाम क्या है, और आपकी उम्र कितनी है? उदाहरण: 'आशा पाटिल, 45 वर्ष'।",
+            "mr": "तुमचे नाव काय आहे आणि तुमचे वय किती आहे? उदाहरण: 'आशा पाटील, ४५ वर्षे'.",
         },
     ),
     IntakeField(
@@ -88,14 +93,14 @@ INTAKE_FIELDS: list[IntakeField] = [
         critical=True,
         label={"en": "Chief complaint", "hi": "मुख्य शिकायत", "mr": "मुख्य तक्रार"},
         prompt={
-            "en": "What brought you in today? What is troubling you the most?",
-            "hi": "आज आप किस वजह से आए हैं? आपको सबसे ज़्यादा क्या तकलीफ़ है?",
-            "mr": "आज तुम्ही कशासाठी आलात? तुम्हाला सर्वात जास्त काय त्रास होतोय?",
+            "en": "What is the main issue that brought you in today?",
+            "hi": "आज आप किस मुख्य समस्या के कारण आए हैं?",
+            "mr": "आज तुम्ही कोणत्या मुख्य त्रासामुळे आला आहात?",
         },
         simpler_prompt={
-            "en": "What is the main problem you are feeling today? For example, stomach pain, fever, or cough.",
-            "hi": "आज आपको सबसे बड़ी तकलीफ़ क्या महसूस हो रही है? जैसे पेट दर्द, बुख़ार, या खांसी।",
-            "mr": "आज तुम्हाला जाणवणारी मुख्य समस्या कोणती आहे? जसे पोटदुखी, ताप, किंवा खोकला.",
+            "en": "What is bothering you the most? For example: 'chest pain' or 'fever for 3 days'.",
+            "hi": "आपको सबसे ज़्यादा क्या परेशान कर रहा है? उदाहरण: 'सीने में दर्द' या '3 दिन से बुखार'।",
+            "mr": "तुम्हाला सर्वात जास्त काय त्रास होतोय? उदाहरण: 'छातीत दुखणे' किंवा '३ दिवसांपासून ताप'.",
         },
     ),
     IntakeField(
@@ -103,24 +108,24 @@ INTAKE_FIELDS: list[IntakeField] = [
         ftype=FieldType.FREE_TEXT,
         label={"en": "Onset / duration", "hi": "शुरुआत / अवधि", "mr": "सुरुवात / कालावधी"},
         prompt={
-            "en": "When did this start, and did it begin suddenly or gradually?",
-            "hi": "यह कब शुरू हुआ, और क्या यह अचानक शुरू हुआ या धीरे-धीरे?",
-            "mr": "हे कधी सुरू झाले, आणि ते अचानक सुरू झाले की हळूहळू?",
+            "en": "When did this start, and how long has it been going on?",
+            "hi": "यह कब शुरू हुआ, और कब से हो रहा है?",
+            "mr": "हे कधी सुरू झाले आणि किती काळापासून आहे?",
         },
         simpler_prompt={
-            "en": "How many days or hours ago did this begin? For example, 'two days ago, slowly'.",
-            "hi": "यह कितने दिन या घंटे पहले शुरू हुआ? उदाहरण के लिए, 'दो दिन पहले, धीरे-धीरे'।",
-            "mr": "हे किती दिवस किंवा तासांपूर्वी सुरू झाले? उदाहरणार्थ, 'दोन दिवसांपूर्वी, हळूहळू'.",
+            "en": "Did it start today, a few days ago, or longer? For example: 'since this morning'.",
+            "hi": "क्या यह आज शुरू हुआ, कुछ दिन पहले, या उससे पहले? उदाहरण: 'आज सुबह से'।",
+            "mr": "हे आज सुरू झाले, काही दिवसांपूर्वी, की त्याहून आधी? उदाहरण: 'आज सकाळपासून'.",
         },
     ),
     IntakeField(
         id="location",
         ftype=FieldType.FREE_TEXT,
         label={"en": "Location", "hi": "स्थान", "mr": "ठिकाण"},
-        prompt={
-            "en": "Where in your body do you feel it?",
-            "hi": "आपको यह शरीर के किस हिस्से में महसूस होता है?",
-            "mr": "हे तुम्हाला शरीराच्या कोणत्या भागात जाणवते?",
+       prompt={
+            "en": "Where in your body do you feel it? Please point in words.",
+            "hi": "आप इसे शरीर में कहाँ महसूस करते हैं? कृपया शब्दों में बताएं।",
+            "mr": "हे तुम्हाला शरीरात कुठे जाणवते? कृपया शब्दांत सांगा.",
         },
         simpler_prompt={
             "en": "Can you tell me where it hurts? For example, the upper belly, the chest, or the lower back.",
@@ -132,10 +137,10 @@ INTAKE_FIELDS: list[IntakeField] = [
         id="character",
         ftype=FieldType.FREE_TEXT,
         label={"en": "Character", "hi": "प्रकृति", "mr": "स्वरूप"},
-        prompt={
-            "en": "What does it feel like?",
-            "hi": "यह कैसा महसूस होता है?",
-            "mr": "ते कसे वाटते?",
+         prompt={
+            "en": "How would you describe it? For example: sharp, dull, burning, or cramping.",
+            "hi": "आप इसे कैसे बताएंगे? उदाहरण: तेज़, हल्का, जलन, या ऐंठन।",
+            "mr": "तुम्ही ते कसे सांगाल? उदाहरण: तीव्र, मंद, जळजळ, किंवा पिळवटणे.",
         },
         simpler_prompt={
             "en": "Is it more like a sharp poke, a dull ache, or a burning feeling?",
@@ -147,25 +152,25 @@ INTAKE_FIELDS: list[IntakeField] = [
         id="severity",
         ftype=FieldType.SCALE_0_10,
         label={"en": "Severity (0-10)", "hi": "गंभीरता (0-10)", "mr": "तीव्रता (0-10)"},
-        prompt={
-            "en": "On a scale of 0 to 10, where 10 is the worst, how bad is it?",
-            "hi": "0 से 10 के पैमाने पर, जहाँ 10 सबसे ज़्यादा है, यह कितना तेज़ है?",
-            "mr": "0 ते 10 च्या प्रमाणात, जिथे 10 सर्वात जास्त आहे, हे किती तीव्र आहे?",
+       prompt={
+            "en": "On a scale of 0 to 10, how bad is it, where 10 is the worst?",
+            "hi": "0 से 10 के पैमाने पर, यह कितना बुरा है, जहाँ 10 सबसे ज़्यादा है?",
+            "mr": "० ते १० च्या प्रमाणात, हे किती तीव्र आहे, जिथे १० सर्वात जास्त आहे?",
         },
         simpler_prompt={
-            "en": "If 0 means no problem and 10 means the worst you can imagine, what number is it right now?",
-            "hi": "अगर 0 का मतलब कोई तकलीफ़ नहीं और 10 का मतलब सबसे ज़्यादा तकलीफ़, तो अभी कितना नंबर है?",
-            "mr": "जर 0 म्हणजे काही त्रास नाही आणि 10 म्हणजे सर्वात जास्त त्रास, तर आत्ता किती नंबर आहे?",
+            "en": "Please say a number from 0 to 10. 0 means no pain, 10 means the worst pain.",
+            "hi": "कृपया 0 से 10 तक एक संख्या कहें। 0 का मतलब कोई दर्द नहीं, 10 का मतलब सबसे ज़्यादा दर्द।",
+            "mr": "कृपया ० ते १० मधील एक संख्या सांगा. ० म्हणजे त्रास नाही, १० म्हणजे सर्वाधिक त्रास.",
         },
     ),
     IntakeField(
         id="timing_pattern",
         ftype=FieldType.FREE_TEXT,
         label={"en": "Timing / pattern", "hi": "समय / पैटर्न", "mr": "वेळ / स्वरूप"},
-        prompt={
-            "en": "Is it there all the time, or does it come and go? Is it worse at any particular time?",
-            "hi": "क्या यह हर समय रहता है, या आता-जाता है? क्या यह किसी ख़ास समय पर ज़्यादा होता है?",
-            "mr": "हे सतत असते का, की येते-जाते? कोणत्या विशिष्ट वेळी जास्त होते का?",
+         prompt={
+            "en": "Is it there all the time, or does it come and go?",
+            "hi": "क्या यह हर समय रहता है, या आता-जाता है?",
+            "mr": "हे सतत असते, की येते-जाते?",
         },
         simpler_prompt={
             "en": "Does it stay constant, or does it come in waves? For example, worse after eating or at night.",
@@ -182,9 +187,9 @@ INTAKE_FIELDS: list[IntakeField] = [
             "mr": "वाढवणारे / कमी करणारे घटक",
         },
         prompt={
-            "en": "Is there anything that makes it worse or better?",
-            "hi": "क्या कोई चीज़ इसे बढ़ाती या कम करती है?",
-            "mr": "असे काही आहे का ज्याने हे वाढते किंवा कमी होते?",
+            "en": "What makes it better or worse?",
+            "hi": "इससे क्या बेहतर या बदतर होता है?",
+            "mr": "कशामुळे ते कमी होते किंवा वाढते?",
         },
         simpler_prompt={
             "en": "Does anything make it worse, like movement or food? Does anything help, like rest or medicine?",
@@ -198,9 +203,10 @@ INTAKE_FIELDS: list[IntakeField] = [
         red_flag_check=True,
         label={"en": "Associated symptoms", "hi": "साथ के लक्षण", "mr": "सोबतची लक्षणे"},
         prompt={
-            "en": "Are you having any other symptoms along with this?",
-            "hi": "क्या इसके साथ आपको कोई और लक्षण भी हैं?",
-            "mr": "यासोबत तुम्हाला आणखी काही लक्षणे आहेत का?",
+            "en": "Do you have any other symptoms along with this? For example fever, vomiting, "
+            "breathlessness, or weakness.",
+            "hi": "क्या इसके साथ कोई और लक्षण हैं? उदाहरण: बुखार, उल्टी, साँस फूलना, या कमज़ोरी।",
+            "mr": "याबरोबर इतर काही लक्षणे आहेत का? उदाहरण: ताप, उलटी, धाप लागणे, किंवा अशक्तपणा.",
         },
         simpler_prompt={
             "en": "Any other problems too? For example, fever, vomiting, breathlessness, or dizziness.",
@@ -214,14 +220,15 @@ INTAKE_FIELDS: list[IntakeField] = [
         critical=True,
         label={"en": "Current medications", "hi": "मौजूदा दवाइयाँ", "mr": "सध्याची औषधे"},
         prompt={
-            "en": "Are you currently taking any medicines? Please include the dose if you know it.",
-            "hi": "क्या आप अभी कोई दवा ले रहे हैं? अगर मात्रा पता हो तो वह भी बताएं।",
-            "mr": "तुम्ही सध्या काही औषधे घेत आहात का? माहीत असल्यास मात्राही सांगा.",
+            "en": "What medicines are you currently taking? Please include the names if you know them.",
+            "hi": "आप वर्तमान में कौन सी दवाइयाँ ले रहे हैं? यदि नाम पता हों तो बताएं।",
+            "mr": "तुम्ही सध्या कोणती औषधे घेत आहात? नावे माहीत असल्यास सांगा.",
         },
         simpler_prompt={
-            "en": "Do you take any tablets, syrups, or injections regularly? For example, a blood pressure tablet every morning.",
-            "hi": "क्या आप कोई गोली, सिरप, या इंजेक्शन नियमित रूप से लेते हैं? जैसे रोज़ सुबह बीपी की गोली।",
-            "mr": "तुम्ही नियमित काही गोळ्या, सिरप, किंवा इंजेक्शन घेता का? जसे रोज सकाळी बीपीची गोळी.",
+            "en": "Are you taking any tablets, injections, or syrups regularly? Please say their "
+            "names slowly. For example: 'Metformin 500'.",
+            "hi": "क्या आप नियमित रूप से कोई गोली, इंजेक्शन या सिरप ले रहे हैं? कृपया नाम धीरे-धीरे बताएं।",
+            "mr": "तुम्ही नियमित कोणत्या गोळ्या, इंजेक्शन किंवा सिरप घेता का? कृपया नावे हळू सांगा.",
         },
     ),
     IntakeField(
@@ -230,25 +237,27 @@ INTAKE_FIELDS: list[IntakeField] = [
         critical=True,
         red_flag_check=True,
         label={"en": "Allergies", "hi": "एलर्जी", "mr": "ॲलर्जी"},
-        prompt={
-            "en": "Do you have any allergies to medicines or foods?",
-            "hi": "क्या आपको किसी दवा या भोजन से एलर्जी है?",
-            "mr": "तुम्हाला कोणत्या औषधाची किंवा अन्नाची ॲलर्जी आहे का?",
+          prompt={
+            "en": "Are you allergic to any medicines or foods? If yes, please name them.",
+            "hi": "क्या आपको किसी दवा या भोजन से एलर्जी है? यदि हाँ, तो नाम बताएं।",
+            "mr": "तुम्हाला कोणत्या औषधाची किंवा अन्नाची ॲलर्जी आहे का? असल्यास नावे सांगा.",
         },
         simpler_prompt={
-            "en": "Does any medicine or food cause a reaction like rash, swelling, or trouble breathing?",
-            "hi": "क्या किसी दवा या भोजन से आपको चकत्ते, सूजन, या साँस लेने में दिक़्क़त होती है?",
-            "mr": "एखाद्या औषधाने किंवा अन्नाने तुम्हाला पुरळ, सूज, किंवा श्वास घेण्यास त्रास होतो का?",
+            "en": "Has any medicine ever caused you a rash, swelling, or trouble breathing? Please "
+            "say which one. If none, say 'no allergies'.",
+            "hi": "क्या किसी दवा से कभी चकत्ते, सूजन या साँस की दिक्कत हुई है? कौन सी, बताएं। नहीं तो 'कोई एलर्जी नहीं' कहें।",
+            "mr": "कोणत्या औषधामुळे कधी पुरळ, सूज किंवा श्वासाचा त्रास झाला का? कोणते ते सांगा. नसल्यास 'ॲलर्जी नाही' म्हणा.",
         },
     ),
     IntakeField(
         id="past_medical_history",
         ftype=FieldType.FREE_TEXT,
         label={"en": "Past medical history", "hi": "पुरानी बीमारियाँ", "mr": "जुने आजार"},
-        prompt={
-            "en": "Do you have any long-term illnesses, or have you had this problem before?",
-            "hi": "क्या आपको कोई पुरानी बीमारी है, या यह समस्या पहले भी हुई है?",
-            "mr": "तुम्हाला काही दीर्घकालीन आजार आहेत का, किंवा ही समस्या आधीही झाली आहे का?",
+         prompt={
+            "en": "Do you have any ongoing health conditions, like diabetes, blood pressure, or "
+            "heart or lung problems?",
+            "hi": "क्या आपको कोई पुरानी बीमारी है, जैसे मधुमेह, रक्तचाप, या हृदय या फेफड़ों की समस्या?",
+            "mr": "तुम्हाला मधुमेह, रक्तदाब, किंवा हृदय वा फुफ्फुसाचा त्रास यांसारखा काही जुना आजार आहे का?",
         },
         simpler_prompt={
             "en": "Any ongoing conditions like diabetes, blood pressure, or asthma?",
@@ -265,9 +274,9 @@ INTAKE_FIELDS: list[IntakeField] = [
             "mr": "मागील शस्त्रक्रिया / रुग्णालयात भरती",
         },
         prompt={
-            "en": "Have you ever had any surgery or been admitted to a hospital?",
-            "hi": "क्या आपकी कभी कोई सर्जरी हुई है या आप अस्पताल में भर्ती हुए हैं?",
-            "mr": "तुमची कधी काही शस्त्रक्रिया झाली आहे का किंवा तुम्ही रुग्णालयात भरती झाला आहात का?",
+            "en": "Have you had any surgeries or hospital stays before?",
+            "hi": "क्या आपकी पहले कोई सर्जरी या अस्पताल में भर्ती हुई है?",
+            "mr": "तुमची आधी कोणती शस्त्रक्रिया किंवा रुग्णालयात भरती झाली आहे का?",
         },
         simpler_prompt={
             "en": "Any operations in the past, or times you stayed overnight in a hospital?",
@@ -281,9 +290,9 @@ INTAKE_FIELDS: list[IntakeField] = [
         required=False,
         label={"en": "Family history", "hi": "पारिवारिक इतिहास", "mr": "कौटुंबिक इतिहास"},
         prompt={
-            "en": "Do any illnesses run in your family?",
-            "hi": "क्या आपके परिवार में कोई बीमारी चलती है?",
-            "mr": "तुमच्या कुटुंबात काही आजार चालत आले आहेत का?",
+            "en": "Do any illnesses run in your family, like diabetes, heart disease, or cancer?",
+            "hi": "क्या आपके परिवार में कोई बीमारी चलती है, जैसे मधुमेह, हृदय रोग, या कैंसर?",
+            "mr": "तुमच्या कुटुंबात मधुमेह, हृदयरोग, किंवा कर्करोग असे काही आजार आहेत का?",
         },
         simpler_prompt={
             "en": "Do your parents or siblings have conditions like heart disease, diabetes, or cancer?",
@@ -297,9 +306,9 @@ INTAKE_FIELDS: list[IntakeField] = [
         required=False,
         label={"en": "Social history", "hi": "सामाजिक इतिहास", "mr": "सामाजिक इतिहास"},
         prompt={
-            "en": "Do you use tobacco or alcohol, and what work do you do?",
-            "hi": "क्या आप तंबाकू या शराब का सेवन करते हैं, और आप क्या काम करते हैं?",
-            "mr": "तुम्ही तंबाखू किंवा दारूचे सेवन करता का, आणि तुम्ही काय काम करता?",
+            "en": "Do you use tobacco or alcohol? And what work do you do?",
+            "hi": "क्या आप तंबाकू या शराब का उपयोग करते हैं? और आप क्या काम करते हैं?",
+            "mr": "तुम्ही तंबाखू किंवा दारू वापरता का? आणि तुम्ही काय काम करता?",
         },
         simpler_prompt={
             "en": "Do you smoke, chew tobacco, or drink alcohol? And what is your job?",
@@ -315,7 +324,7 @@ INTAKE_FIELDS: list[IntakeField] = [
         prompt={
             "en": "Is there anything else you would like the doctor to know?",
             "hi": "क्या कुछ और है जो आप डॉक्टर को बताना चाहेंगे?",
-            "mr": "डॉक्टरांना सांगू इच्छिता असे आणखी काही आहे का?",
+            "mr": "डॉक्टरांना सांगण्यासारखे आणखी काही आहे का?",
         },
         simpler_prompt={
             "en": "Anything else on your mind that the doctor should know before you meet?",

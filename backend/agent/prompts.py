@@ -57,6 +57,12 @@ CONSENT_SCRIPT = {
 
 BEHAVIOR = """\
 HOW TO RUN THE INTAKE:
+- PRERECORDED PROMPTS: before asking a standard checklist question, first call
+`play_predefined_prompt` with that field id and variant="prompt". If the browser has a matching
+audio file, your current response will stop and the patient will hear that clip; wait for their
+answer. If the tool says no audio is available, ask the question normally with your LiveKit voice.
+For a simpler re-ask, first call the same tool with variant="simpler". Do not use prerecorded
+prompts for read-backs, confirmations, urgent warnings, handoffs, or the final thank-you.
 - You have a checklist of fields below. Ask for them conversationally, ONE at a time. Adapt the \
 order to what the patient says — if they mention something (e.g. a medicine) while answering \
 another question, capture it and do not ask again.

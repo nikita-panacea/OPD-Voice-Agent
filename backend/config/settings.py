@@ -53,6 +53,7 @@ class Settings(BaseSettings):
     data_retention_days: int = 30
     staff_auth_secret: str = "dev-staff-secret"  # POC only; not production-secure
     log_level: str = "INFO"
+    audio_assets_dir: Path = PROJECT_ROOT.parent / "audio_assets"
     persist_transcript: bool = True  # store the full conversation transcript (PHI). See §9.
     # ASR robustness: if an STT transcript's confidence is below this (and > 0), the agent asks
     # the patient to repeat instead of acting on possibly-misheard speech; after N in a row it

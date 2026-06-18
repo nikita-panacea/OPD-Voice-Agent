@@ -16,8 +16,8 @@ import {
   type RemoteTrackPublication,
   type TranscriptionSegment,
 } from "livekit-client";
-
-const API_BASE = import.meta.env.VITE_API_BASE ?? "http://localhost:8000";
+import { API_BASE } from "./api";
+import { AudioPlayer } from "./audio";
 
 export interface TokenResponse {
   token: string;
@@ -46,6 +46,19 @@ export type Status = "idle" | "connecting" | "connected" | "error";
 
 const DATA_TOPIC = "intake";
 
+interface IntakeDataMessage {
+  type?: string;
+  id?: string;
+  label?: string;
+  value?: string;
+  confirmed?: boolean;
+  reason?: string;
+  field_id?: string;
+  variant?: string;
+  url?: string;
+  text?: string;
+}
+
 /** Request a LiveKit join token for the chosen language from the FastAPI backend. */
 export async function fetchToken(language: string): Promise<TokenResponse> {
   const res = await fetch(`${API_BASE}/api/token`, {
@@ -73,6 +86,8 @@ export function useIntakeRoom() {
   const [agentSpeaking, setAgentSpeaking] = useState(false);
   const [patientSpeaking, setPatientSpeaking] = useState(false);
   const [micPublished, setMicPublished] = useState(false);
+  const promptAudioRef = useRef<AudioPlayer | null>(null);
+  if (promptAudioRef.current === null) promptAudioRef.current = new AudioPlayer();
 
   const connect = useCallback(async (language: string) => {
     setStatus("connecting");
@@ -125,7 +140,7 @@ export function useIntakeRoom() {
         })
         .on(RoomEvent.DataReceived, (payload: Uint8Array, _p?: Participant, _k?: unknown, topic?: string) => {
           if (topic && topic !== DATA_TOPIC) return;
-          let msg: { type?: string; id?: string; label?: string; value?: string; confirmed?: boolean; reason?: string };
+          let msg: IntakeDataMessage;
           try {
             msg = JSON.parse(new TextDecoder().decode(payload));
           } catch {
@@ -151,6 +166,42 @@ export function useIntakeRoom() {
             setCompleted(true);
           } else if (msg.type === "handoff") {
             setHandoff(true);
+          } else if (msg.type === "prompt_audio" && msg.url) {
+            const promptUrl = msg.url;
+            const captionText = msg.text ?? "";
+            if (captionText) {
+              setCaptions((prev) => [
+                ...prev,
+                {
+                  id: `prompt-${msg.field_id ?? "field"}-${msg.variant ?? "prompt"}-${Date.now()}`,
+                  speaker: "agent",
+                  text: captionText,
+                  final: true,
+                },
+              ]);
+            }
+
+            const playPrompt = async () => {
+              const wasMicPublished = room.localParticipant.isMicrophoneEnabled;
+              if (wasMicPublished) {
+                await room.localParticipant.setMicrophoneEnabled(false);
+                setMicPublished(false);
+              }
+              setAgentSpeaking(true);
+              try {
+                await promptAudioRef.current?.play(promptUrl);
+              } finally {
+                setAgentSpeaking(false);
+                if (wasMicPublished && roomRef.current === room) {
+                  await room.localParticipant.setMicrophoneEnabled(true);
+                  setMicPublished(room.localParticipant.isMicrophoneEnabled);
+                }
+              }
+            };
+
+            void playPrompt().catch((err) => {
+              console.warn("[audio] prompt playback failed", err);
+            });
           }
         })
         .on(RoomEvent.Disconnected, () => setStatus("idle"))
