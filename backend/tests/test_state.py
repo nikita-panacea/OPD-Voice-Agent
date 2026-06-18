@@ -67,6 +67,17 @@ def test_raise_urgent_sets_flag() -> None:
         assert row.urgent_reason == "chest pain"
 
 
+def test_remaining_required_excludes_captured() -> None:
+    from intake.questions import required_field_ids
+
+    state = _new_state()
+    assert state.remaining_required() == required_field_ids()  # nothing captured yet
+    state.save_field("chief_complaint", "fever")
+    remaining = state.remaining_required()
+    assert "chief_complaint" not in remaining
+    assert "severity" in remaining  # other required fields still pending
+
+
 def test_completion_rate_increases_with_required_fields() -> None:
     state = _new_state()
     assert state.completion_rate() == 0.0

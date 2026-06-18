@@ -27,11 +27,12 @@ from livekit.agents import AgentServer, JobContext, RoomInputOptions, cli
 
 from agent.intake_agent import IntakeAgent
 from config.settings import ENV_FILE, get_settings
+from intake import report
 from intake.state import IntakeState
 from intake.transcript import TranscriptRecorder
 from logging_setup import configure_logging, get_logger
 from providers.registry import build_session
-from telemetry import cost
+from telemetry import cost, session_summary
 from telemetry.meter import SessionMeter
 
 # Load the project-root .env into os.environ. The LiveKit SDK (AgentServer reads LIVEKIT_URL/
@@ -103,9 +104,20 @@ async def entrypoint(ctx: JobContext) -> None:
     start_time = time.monotonic()
 
     async def _on_shutdown() -> None:
-        meter.close()
+        meter.close()  # flush the final turn's telemetry first
         duration = time.monotonic() - start_time
         state.record_session_cost(duration, cost.livekit_cost(duration))
+        # Always generate the clinician report at session end — don't rely on the LLM having
+        # called complete_intake (it may not on disconnect/hangup).
+        try:
+            report.generate_and_store(ctx.room.name)
+        except Exception as exc:  # noqa: BLE001 - best-effort at shutdown
+            log.warning("report_generation_failed", error=str(exc))
+        # Per-session cost/performance log file (+ transcript) for POC analysis.
+        try:
+            session_summary.write_session_files(ctx.room.name)
+        except Exception as exc:  # noqa: BLE001 - best-effort at shutdown
+            log.warning("session_summary_failed", error=str(exc))
 
     ctx.add_shutdown_callback(_on_shutdown)
 

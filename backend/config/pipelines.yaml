@@ -14,7 +14,7 @@ active_default: indic_quality
 pipelines:
   # ---- Best Indic + code-mix quality (POC default) ------------------------------
   indic_quality:
-    description: "Sarvam Saaras v3 STT -> GPT-4.1 -> Sarvam Bulbul TTS"
+    description: "Sarvam Saaras v3 STT -> GPT-4.1-mini -> Sarvam Bulbul TTS"
     stt:
       provider: sarvam
       model: "saaras:v3"
@@ -22,8 +22,8 @@ pipelines:
       options: { mode: "transcribe" }
     llm:
       provider: openai
-      model: "gpt-4.1"
-      pricing_key: "openai/gpt-4.1"
+      model: "gpt-4.1-mini"
+      pricing_key: "openai/gpt-4.1-mini"
       options: {}
     tts:
       provider: sarvam

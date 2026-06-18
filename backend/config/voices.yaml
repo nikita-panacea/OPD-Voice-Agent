@@ -13,13 +13,16 @@
 provider: sarvam
 model: "bulbul:v2"
 
+# The agent persona is "Dhara", a FEMALE assistant. "anushka" is a female Bulbul v2 speaker and
+# is multilingual across Indic languages + English, so one female voice serves en/hi/mr.
+# (Other female v2 options: manisha, vidya, arya.) Verify speaker names against the Sarvam docs.
 voices:
   en:
-    speaker: "anushka"      # verify available speaker for bulbul:v2
+    speaker: "anushka"      # Dhara — female
   hi:
-    speaker: "anushka"      # Bulbul voices are multilingual across Indic + English
+    speaker: "anushka"      # Dhara — female
   mr:
-    speaker: "anushka"      # Marathi via Bulbul (target_language_code mr-IN)
+    speaker: "anushka"      # Dhara — female
 
 default:
-  speaker: "anushka"
+  speaker: "anushka"        # Dhara — female

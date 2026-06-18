@@ -11,6 +11,7 @@ from fastapi import APIRouter, Depends, Header, HTTPException, Response
 from config.settings import get_settings
 from intake import report as report_mod
 from store.db import IntakeSession, TranscriptRow, session_scope
+from telemetry import session_summary
 
 router = APIRouter(prefix="/api/sessions", tags=["staff"])
 
@@ -57,6 +58,16 @@ def get_report_markdown(session_id: str) -> Response:
     except KeyError:
         raise HTTPException(status_code=404, detail="Unknown session") from None
     return Response(content=markdown, media_type="text/markdown")
+
+
+@router.get("/{session_id}/summary", dependencies=[Depends(require_staff)])
+def get_summary(session_id: str) -> dict:
+    """Return the per-session cost/performance summary (duration, per-component usage + cost,
+    completion, latency, total cost) — computed fresh from the DB."""
+    try:
+        return session_summary.build_summary(session_id)
+    except KeyError:
+        raise HTTPException(status_code=404, detail="Unknown session") from None
 
 
 @router.get("/{session_id}/transcript", dependencies=[Depends(require_staff)])

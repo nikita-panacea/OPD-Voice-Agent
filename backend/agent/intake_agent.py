@@ -144,11 +144,22 @@ class IntakeAgent(Agent):
         self._state.set_consent(granted)
         await self._publish({"type": "consent", "granted": granted})
         if granted:
-            return "Consent granted. Begin collecting the chief complaint."
+            return f"Consent granted. Begin collecting the intake.{self._remaining_hint()}"
         return (
             "Consent declined. Do not collect any health information. Politely offer to connect "
             "the patient to hospital staff and end."
         )
+
+    def _remaining_hint(self) -> str:
+        """A running checklist suffix so the LLM never re-asks captured fields and knows what's
+        left. Volunteered answers, once saved, drop off this list automatically."""
+        remaining = self._state.remaining_required()
+        if remaining:
+            return (
+                f" Still needed (do NOT re-ask anything already captured): {remaining}."
+                " If the patient already gave any of these, save it now and skip that question."
+            )
+        return " All required fields are captured — thank the patient and call complete_intake."
 
     async def apply_field(self, field_id: str, value: str, confidence: float = 1.0) -> str:
         """Validate + consent-gate + save + push a field. Returns the LLM-facing message.
@@ -166,9 +177,9 @@ class IntakeAgent(Agent):
         if field_id in critical_field_ids():
             return (
                 f"Saved {field_id}. This is a critical field — read it back to the patient and "
-                "ask them to confirm, then call confirm_field."
+                f"ask them to confirm, then call confirm_field.{self._remaining_hint()}"
             )
-        return f"Saved {field_id}. Continue with the next needed field."
+        return f"Saved {field_id}.{self._remaining_hint()}"
 
     @function_tool
     async def save_intake_field(
@@ -188,7 +199,7 @@ class IntakeAgent(Agent):
         """Mark a critical field as confirmed after the patient verifies the read-back."""
         self._state.confirm_field(field_id)
         await self._publish(self._state.field_panel_payload(field_id))
-        return f"Confirmed {field_id}."
+        return f"Confirmed {field_id}.{self._remaining_hint()}"
 
     @function_tool
     async def flag_urgent(self, context: RunContext, reason: str) -> str:

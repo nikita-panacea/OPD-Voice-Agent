@@ -134,6 +134,10 @@ class IntakeState:
         filled = sum(1 for fid in required if fid in self.fields)
         return filled / len(required)
 
+    def remaining_required(self) -> list[str]:
+        """Required field ids not captured yet — fed back to the LLM to avoid re-asking."""
+        return [fid for fid in required_field_ids() if fid not in self.fields]
+
     def field_panel_payload(self, field_id: str) -> dict[str, object]:
         """A small dict for the live UI panel (label localized to the session language)."""
         fv = self.fields[field_id]
