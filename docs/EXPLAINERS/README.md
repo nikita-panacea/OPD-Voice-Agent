@@ -32,7 +32,9 @@ walkthrough). A file is not "done" until its explainer exists and matches the co
 - [backend/api/main.py](backend__api__main.md) — FastAPI app
 - [backend/api/tokens.py](backend__api__tokens.md) — LiveKit token minting
 - [frontend/src/lib/livekit.ts](frontend__src__lib__livekit.md) — Room/connection hook
+- [frontend/src/lib/staff.ts](frontend__src__lib__staff.md) — staff API client (sessions/report/summary/transcript)
 - [frontend/src/pages/Intake.tsx](frontend__src__pages__Intake.md) — patient view
+- [frontend/src/pages/Sessions.tsx](frontend__src__pages__Sessions.md) — staff view (Report / Summary / Transcript tabs)
 - [frontend/src/components/LanguagePicker.tsx](frontend__src__components__LanguagePicker.md)
 - [frontend/src/components/MicIndicator.tsx](frontend__src__components__MicIndicator.md)
 - [frontend/src/components/TranscriptView.tsx](frontend__src__components__TranscriptView.md)
@@ -58,7 +60,9 @@ walkthrough). A file is not "done" until its explainer exists and matches the co
 - [backend/telemetry/cost.py](backend__telemetry__cost.md) — cost math from pricing.yaml
 - [backend/telemetry/meter.py](backend__telemetry__meter.md) — metrics → costed rows
 - [backend/telemetry/compare.py](backend__telemetry__compare.md) — cost-vs-performance aggregation
+- [backend/telemetry/session_summary.py](backend__telemetry__session_summary.md) — per-session cost/perf log (+ transcript)
 - [backend/api/dashboard.py](backend__api__dashboard.md) — /api/compare endpoints
+- [backend/tests/test_session_summary.py](backend__telemetry__session_summary.md) — session summary tests
 - [backend/tests/test_cost.py](backend__telemetry__cost.md) — cost-math tests
 - [backend/tests/test_telemetry.py](backend__telemetry__meter.md) — meter routing tests
 - [backend/tests/test_compare.py](backend__telemetry__compare.md) — comparison aggregation tests

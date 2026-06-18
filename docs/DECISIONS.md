@@ -26,6 +26,32 @@ Sarvam TTS, and showed the re-sent system prompt makes prompt caching the main L
 streaming. Caching realized only if the provider returns `prompt_cached_tokens` (stable system
 prompt + tools makes this likely on OpenAI/Gemini).
 
+## ADR-0014 — Reliable report, anti-repetition, per-session logs, Dhara female persona
+
+**Status:** accepted (2026-06-16).
+**Fixes (from POC feedback):**
+1. **Report always generated** — the clinician report is now produced in the worker's shutdown
+   callback (`report.generate_and_store`), so it exists even if the LLM never calls
+   `complete_intake` (e.g. patient hangs up).
+2. **No repeated questions** — `IntakeState.remaining_required()` + `IntakeAgent._remaining_hint()`
+   append a live "Still needed: [...]" checklist to every tool result, and the prompt instructs
+   the agent to save volunteered info immediately and skip captured fields. Patients who answer
+   ahead no longer get re-asked.
+3. **Per-session cost/perf logs** — `telemetry/session_summary.py` writes
+   `logs/sessions/<id>.json` + `.md` at session end with duration, per-component usage
+   (STT sec, LLM in/out/cached tokens, TTS chars, LiveKit min) + **cost breakdown + total**,
+   completion, median latency, and the **full transcript**. (Cross-session view stays in
+   `/api/compare`; flow events in `logs/agent.jsonl`.)
+4. **Dhara — female persona/voice** — persona is explicitly female named Dhara; greeting
+   introduces her by name; the prompt enforces feminine Hindi/Marathi self-forms ("करती हूँ" /
+   "करते"); `voices.yaml` documents the female Bulbul speaker. Deterministic hi/mr spoken lines
+   already used feminine/neutral self-reference.
+**Verified:** 70 tests pass (incl. session-summary aggregation/files, remaining_required); prompts
+contain the female + anti-repeat rules.
+**Note:** anti-repetition + sense-check are LLM-followed behaviors nudged strongly by the tool
+feedback + prompt; the deterministic guarantees remain the consent gate, red-flag backstop, and
+ASR-confidence gate.
+
 ## ADR-0013 — ASR mis-hearing protection (sense-check + confidence gate)
 
 **Status:** accepted (2026-06-16).

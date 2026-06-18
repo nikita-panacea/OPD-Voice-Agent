@@ -28,9 +28,12 @@ updates to the patient's UI panel.
   Unit-tested in `tests/test_asr_confidence.py`.
 - **`record_consent(context, granted)`** — sets consent in state + UI; returns next-step
   guidance (or the decline path: collect nothing, offer staff).
+- **`_remaining_hint()`** — returns a running-checklist suffix ("Still needed: [...]" or "all
+  captured → complete_intake") appended to tool results so the LLM captures volunteered info and
+  never re-asks a field already saved (anti-repetition).
 - **`apply_field(field_id, value, confidence)`** — plain (non-tool) method holding the
-  validate + **consent gate** + save + UI-push logic; returns the LLM-facing message. Split out
-  so the gate is directly unit-testable (`tests/test_red_flags.py`).
+  validate + **consent gate** + save + UI-push logic; returns the LLM-facing message **plus the
+  remaining-fields hint**. Split out so the gate is directly unit-testable (`tests/test_red_flags.py`).
 - **`save_intake_field(context, ...)`** — thin `@function_tool` wrapper over `apply_field`.
 - **`confirm_field(context, field_id)`** — marks a critical field confirmed + updates the UI.
 - **`flag_urgent(context, reason)`** — LLM-initiated escalation (the deterministic hook is the

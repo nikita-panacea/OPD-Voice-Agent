@@ -215,7 +215,13 @@ Expect: `Local: http://localhost:5173/`.
 
 ## 7. See the results (staff side)
 
-Reports are protected by `STAFF_AUTH_SECRET` (sent as the `X-Staff-Secret` header).
+**Easiest: the Staff tab in the UI.** Open the app (http://localhost:5173), click
+**"Staff · Sessions & reports"**, paste your `STAFF_AUTH_SECRET`, and click **Load sessions**.
+Pick a session to view its **Report**, **Summary & cost** (per-component usage + cost breakdown),
+and **Transcript** tabs.
+
+Or use the API directly — reports are protected by `STAFF_AUTH_SECRET` (sent as the
+`X-Staff-Secret` header).
 
 **List sessions**
 ```bash
@@ -230,6 +236,11 @@ curl -H "X-Staff-Secret: <your-secret>" \
 ```bash
 curl -H "X-Staff-Secret: <your-secret>" \
   http://localhost:8000/api/sessions/<session_id>/report.md
+```
+**Get the per-session cost/performance summary, and the transcript**
+```bash
+curl -H "X-Staff-Secret: <your-secret>" http://localhost:8000/api/sessions/<session_id>/summary
+curl -H "X-Staff-Secret: <your-secret>" http://localhost:8000/api/sessions/<session_id>/transcript
 ```
 The report opens with the disclaimer *"Automated intake summary — not a diagnosis…"*, the
 chief complaint in the patient's own words, HPI, medications/allergies, histories, an URGENT
@@ -246,6 +257,17 @@ cd backend
 ```
 You'll also see a `turn_metered` log line (cost + latency) in the worker terminal after each
 turn.
+
+### Per-session logs (cost + performance + transcript)
+At the end of every session the worker writes, under `backend/logs/`:
+- **`logs/sessions/<session_id>.json`** and **`.md`** — the full per-session rollup: duration,
+  per-component usage (STT seconds, LLM in/out/cached tokens, TTS chars, LiveKit minutes) with a
+  **cost breakdown + total**, completion rate, median latency, and the **full transcript**.
+- **`logs/agent.jsonl`** / **`logs/api.jsonl`** — rotating structured event logs (worker / API).
+
+The clinician report is also generated at session end (not only when the agent calls
+`complete_intake`) — read it at `GET /api/sessions/{id}/report(.md)` or regenerate from the DB.
+Keep `backend/logs/` out of OneDrive sync.
 
 ---
 

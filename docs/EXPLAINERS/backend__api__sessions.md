@@ -16,6 +16,9 @@ Gated by a shared `STAFF_AUTH_SECRET` (POC-grade auth).
   return the structured JSON; 404 for unknown sessions.
 - **`get_report_markdown(session_id)`** (`GET /api/sessions/{id}/report.md`) — same, returned as
   `text/markdown`.
+- **`get_summary(session_id)`** (`GET /api/sessions/{id}/summary`) — the per-session
+  cost/performance summary (`session_summary.build_summary`): duration, per-component usage +
+  cost breakdown, total cost, completion, latency, transcript. Powers the staff UI's Summary tab.
 - **`get_transcript(session_id)`** (`GET /api/sessions/{id}/transcript`) — the full ordered
   conversation (seq/role/text). **PHI** — staff-gated, retention-bound.
 

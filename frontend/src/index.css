@@ -89,6 +89,49 @@ button.end { background: #b4232f; margin-top: 12px; }
 .muted { color: #8a93a6; font-size: 0.85rem; }
 .error { color: #b4232f; font-size: 0.85rem; }
 
+/* --- top nav --- */
+.topnav {
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px 16px; background: #0f1b34; color: white;
+}
+.topnav .brand { font-weight: 700; margin-right: 12px; }
+.navbtn { background: transparent; color: #c7d2e6; padding: 6px 12px; border-radius: 6px; }
+.navbtn.active { background: #2563eb; color: white; }
+
+/* --- staff view --- */
+.staff { max-width: 1100px; margin: 0 auto; padding: 16px; }
+.staff-auth { display: flex; gap: 12px; align-items: flex-end; margin-bottom: 12px; }
+.staff-auth input { padding: 8px; border-radius: 6px; border: 1px solid #c7cfdd; min-width: 240px; }
+.staff-body { display: flex; gap: 16px; align-items: flex-start; }
+
+.session-list { width: 320px; background: white; border: 1px solid #e2e7f0; border-radius: 10px; padding: 12px; }
+.session-list h3 { margin: 0 0 8px; font-size: 1rem; }
+.session-list ul { list-style: none; padding: 0; margin: 0; }
+.session-list li { padding: 8px; border-radius: 6px; cursor: pointer; display: flex; flex-direction: column; }
+.session-list li:hover { background: #f1f5ff; }
+.session-list li.active { background: #e8f0ff; }
+.session-list .sid { font-size: 0.8rem; font-weight: 600; word-break: break-all; }
+.session-list .meta { font-size: 0.72rem; color: #6b7488; }
+
+.session-detail { flex: 1; background: white; border: 1px solid #e2e7f0; border-radius: 10px; padding: 12px; min-height: 300px; }
+.tabs { display: flex; gap: 4px; border-bottom: 1px solid #e2e7f0; margin-bottom: 12px; }
+.tab { background: transparent; color: #4a5568; border-radius: 6px 6px 0 0; padding: 8px 14px; }
+.tab.active { background: #e8f0ff; color: #1a2233; font-weight: 600; }
+
+.report-md { white-space: pre-wrap; word-break: break-word; font-family: ui-monospace, "Cascadia Code", Consolas, monospace; font-size: 0.82rem; background: #f8fafc; border: 1px solid #eef2f7; border-radius: 8px; padding: 12px; max-height: 540px; overflow-y: auto; }
+
+.metrics { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 14px; }
+.metric { background: #f8fafc; border: 1px solid #eef2f7; border-radius: 8px; padding: 8px 12px; min-width: 120px; }
+.metric .m-label { display: block; font-size: 0.7rem; text-transform: uppercase; color: #6b7488; }
+.metric .m-value { font-size: 0.95rem; font-weight: 600; }
+.metric.highlight { background: #eef6ff; border-color: #bcd5f5; }
+.metric.urgent { background: #fdecec; border-color: #e7a3a3; color: #8a1f1f; }
+
+.cost-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+.cost-table th, .cost-table td { text-align: left; padding: 8px; border-bottom: 1px solid #eef2f7; }
+.cost-table th { color: #6b7488; font-size: 0.72rem; text-transform: uppercase; }
+.cost-table tr.total td { font-weight: 700; border-top: 2px solid #d6deea; }
+
 .urgent-banner {
   background: #fdecec;
   border: 1px solid #e7a3a3;

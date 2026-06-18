@@ -25,6 +25,8 @@ a dropped call and the report generator can read a finished session.
     transport cost on the session row (called from the worker's shutdown callback).
   - **`_persist_field(id)`** — upsert the `IntakeFieldRow` (query by session+field).
   - **`completion_rate()`** — filled required ÷ total required (0–1); feeds telemetry/smoothness.
+  - **`remaining_required()`** — required field ids not yet captured; the agent feeds this back
+    to the LLM after each save so it never re-asks captured fields (anti-repetition).
   - **`field_panel_payload(id)`** — small dict (localized label) pushed to the live UI panel.
 
 ## Gotchas / TODOs

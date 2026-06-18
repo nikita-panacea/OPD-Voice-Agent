@@ -10,7 +10,10 @@ checklist. The guardrails appear here AND as code paths (consent gate + tools + 
 - **In:** language code. **Out:** the full instruction string + a greeting instruction.
 
 ## Walkthrough
-- **`PERSONA`** — "Dhara", warm automated OPD assistant; short, plain, patient.
+- **`PERSONA`** — "Dhara", a warm, **female** automated OPD assistant; short, plain, patient.
+  Instructs feminine grammatical self-forms in Hindi/Marathi (e.g. "करती हूँ" / "करते").
+- **anti-repetition rule** in `BEHAVIOR` — capture volunteered info immediately, skip already-
+  captured fields, and ask only what the tool reports as "Still needed".
 - **`GUARDRAILS`** — the absolute rules: not a doctor, no diagnosis/advice, red-flag → stop +
   `flag_urgent`, consent first, brevity.
 - **`CONSENT_SCRIPT`** — per-language consent framing (en/hi/mr); `LANGUAGE_NAMES` maps the

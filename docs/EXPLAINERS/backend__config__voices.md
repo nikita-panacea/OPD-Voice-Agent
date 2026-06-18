@@ -11,6 +11,8 @@ wrapper.
 - `default:` fallback voice used for any language not listed.
 
 ## Gotchas / TODOs
+- The persona is **Dhara, a female assistant** — `anushka` is a female Bulbul v2 speaker (others:
+  manisha/vidya/arya). Keep a female voice across en/hi/mr to match the persona.
 - Sarvam Bulbul speaker IDs can change between model versions — verify the exact speaker names
   against the Sarvam plugin/docs at build (Risk R5).
 - Bulbul voices are multilingual across Indic languages, so one speaker serves en/hi/mr
