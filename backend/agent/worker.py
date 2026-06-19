@@ -33,6 +33,7 @@ from logging_setup import configure_logging, get_logger
 from providers.registry import build_session
 from telemetry import cost
 from telemetry.meter import SessionMeter
+from telemetry.session_log import write_session_log
 
 # Load the project-root .env into os.environ. The LiveKit SDK (AgentServer reads LIVEKIT_URL/
 # API_KEY/API_SECRET) and the provider plugins (OPENAI_API_KEY / SARVAM_API_KEY / DEEPGRAM_API_KEY
@@ -106,6 +107,7 @@ async def entrypoint(ctx: JobContext) -> None:
         meter.close()
         duration = time.monotonic() - start_time
         state.record_session_cost(duration, cost.livekit_cost(duration))
+        write_session_log(ctx.room.name, duration)
 
     ctx.add_shutdown_callback(_on_shutdown)
 

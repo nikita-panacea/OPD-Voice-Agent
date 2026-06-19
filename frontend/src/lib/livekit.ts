@@ -45,6 +45,8 @@ export interface LiveField {
 export type Status = "idle" | "connecting" | "connected" | "error";
 
 const DATA_TOPIC = "intake";
+const MIN_HOLD_MS = 120; // debounce accidental sub-120ms taps before publishing
+const POST_RELEASE_MS = 350; // keep mic briefly after release so the last word isn't clipped
 
 interface IntakeDataMessage {
   type?: string;
@@ -76,6 +78,8 @@ export async function fetchToken(language: string): Promise<TokenResponse> {
  */
 export function useIntakeRoom() {
   const roomRef = useRef<Room | null>(null);
+  const holdTimerRef = useRef<number | null>(null);
+  const armedRef = useRef(false);
   const [status, setStatus] = useState<Status>("idle");
   const [error, setError] = useState<string | null>(null);
   const [captions, setCaptions] = useState<Caption[]>([]);
@@ -86,8 +90,49 @@ export function useIntakeRoom() {
   const [agentSpeaking, setAgentSpeaking] = useState(false);
   const [patientSpeaking, setPatientSpeaking] = useState(false);
   const [micPublished, setMicPublished] = useState(false);
+  const [recording, setRecording] = useState(false);
   const promptAudioRef = useRef<AudioPlayer | null>(null);
   if (promptAudioRef.current === null) promptAudioRef.current = new AudioPlayer();
+
+  const clearHoldTimer = useCallback(() => {
+    if (holdTimerRef.current !== null) {
+      window.clearTimeout(holdTimerRef.current);
+      holdTimerRef.current = null;
+    }
+  }, []);
+
+  const pttDown = useCallback(() => {
+    const room = roomRef.current;
+    if (!room || holdTimerRef.current !== null) return;
+    holdTimerRef.current = window.setTimeout(async () => {
+      armedRef.current = true;
+      setRecording(true);
+      try {
+        await room.localParticipant.setMicrophoneEnabled(true);
+        setMicPublished(room.localParticipant.isMicrophoneEnabled);
+      } catch (micErr) {
+        setError(
+          "Microphone could not be started — allow mic access for this site. (" +
+            (micErr instanceof Error ? micErr.message : String(micErr)) +
+            ")",
+        );
+      }
+    }, MIN_HOLD_MS);
+  }, []);
+
+  const pttUp = useCallback(() => {
+    clearHoldTimer();
+    setRecording(false);
+    if (!armedRef.current) return;
+    armedRef.current = false;
+    window.setTimeout(() => {
+      const room = roomRef.current;
+      if (!room) return;
+      void room.localParticipant.setMicrophoneEnabled(false).then(() => {
+        setMicPublished(room.localParticipant.isMicrophoneEnabled);
+      });
+    }, POST_RELEASE_MS);
+  }, [clearHoldTimer]);
 
   const connect = useCallback(async (language: string) => {
     setStatus("connecting");
@@ -98,6 +143,9 @@ export function useIntakeRoom() {
     setCompleted(false);
     setHandoff(false);
     setMicPublished(false);
+    setRecording(false);
+    armedRef.current = false;
+    clearHoldTimer();
     try {
       const { token, url } = await fetchToken(language);
       const room = new Room({ adaptiveStream: true, dynacast: true });
@@ -182,8 +230,9 @@ export function useIntakeRoom() {
             }
 
             const playPrompt = async () => {
-              const wasMicPublished = room.localParticipant.isMicrophoneEnabled;
-              if (wasMicPublished) {
+              if (room.localParticipant.isMicrophoneEnabled) {
+                armedRef.current = false;
+                setRecording(false);
                 await room.localParticipant.setMicrophoneEnabled(false);
                 setMicPublished(false);
               }
@@ -192,10 +241,6 @@ export function useIntakeRoom() {
                 await promptAudioRef.current?.play(promptUrl);
               } finally {
                 setAgentSpeaking(false);
-                if (wasMicPublished && roomRef.current === room) {
-                  await room.localParticipant.setMicrophoneEnabled(true);
-                  setMicPublished(room.localParticipant.isMicrophoneEnabled);
-                }
               }
             };
 
@@ -212,29 +257,8 @@ export function useIntakeRoom() {
       await room.connect(url, token);
       console.debug("[livekit] connected to room", room.name, "as", localIdentity());
 
-      // Publish the microphone (prompts for permission). Surface failures clearly instead of
-      // failing the whole connection silently.
-      try {
-        await room.localParticipant.setMicrophoneEnabled(true);
-      } catch (micErr) {
-        setError(
-          "Microphone could not be started — allow mic access for this site in the browser, " +
-            "then reconnect. (" +
-            (micErr instanceof Error ? micErr.message : String(micErr)) +
-            ")",
-        );
-      }
-      const micOn = room.localParticipant.isMicrophoneEnabled;
-      setMicPublished(micOn);
-      console.debug(
-        "[livekit] microphone enabled:",
-        micOn,
-        "| audio publications:",
-        room.localParticipant.audioTrackPublications.size,
-      );
-      if (!micOn) {
-        setError((prev) => prev ?? "Microphone is not publishing — check the browser mic permission.");
-      }
+      // Mic stays off until the patient holds the push-to-talk button (noisy waiting-area UX).
+      setMicPublished(false);
 
       // Unlock audio playback (autoplay policy) using this user-gesture context so the agent
       // can be heard.
@@ -249,9 +273,12 @@ export function useIntakeRoom() {
       setError(e instanceof Error ? e.message : String(e));
       setStatus("error");
     }
-  }, []);
+  }, [clearHoldTimer]);
 
   const disconnect = useCallback(async () => {
+    clearHoldTimer();
+    armedRef.current = false;
+    setRecording(false);
     await roomRef.current?.disconnect();
     roomRef.current = null;
     setStatus("idle");
@@ -271,7 +298,10 @@ export function useIntakeRoom() {
     agentSpeaking,
     patientSpeaking,
     micPublished,
+    recording,
     connect,
     disconnect,
+    pttDown,
+    pttUp,
   };
 }

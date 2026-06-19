@@ -6,11 +6,14 @@ auth only — Phase 9 replaces it with real staff authentication + access contro
 
 from __future__ import annotations
 
+from pathlib import Path
+
 from fastapi import APIRouter, Depends, Header, HTTPException, Response
 
 from config.settings import get_settings
 from intake import report as report_mod
 from store.db import IntakeSession, TranscriptRow, session_scope
+from telemetry.session_log import build_session_log
 
 router = APIRouter(prefix="/api/sessions", tags=["staff"])
 
@@ -57,6 +60,21 @@ def get_report_markdown(session_id: str) -> Response:
     except KeyError:
         raise HTTPException(status_code=404, detail="Unknown session") from None
     return Response(content=markdown, media_type="text/markdown")
+
+
+@router.get("/{session_id}/log", dependencies=[Depends(require_staff)])
+def get_session_log(session_id: str) -> dict:
+    """Return the per-session cost + transcript analysis log (PHI — staff-gated)."""
+    settings = get_settings()
+    path = Path(settings.session_log_dir) / f"{session_id}.json"
+    if path.is_file():
+        import json
+
+        return json.loads(path.read_text(encoding="utf-8"))
+    with session_scope() as db:
+        if db.get(IntakeSession, session_id) is None:
+            raise HTTPException(status_code=404, detail="Unknown session") from None
+    return build_session_log(session_id, interaction_seconds=0.0).to_dict()
 
 
 @router.get("/{session_id}/transcript", dependencies=[Depends(require_staff)])

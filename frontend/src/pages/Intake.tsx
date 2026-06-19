@@ -6,6 +6,7 @@ import { useState } from "react";
 import { FieldPanel } from "../components/FieldPanel";
 import { LanguagePicker } from "../components/LanguagePicker";
 import { MicIndicator } from "../components/MicIndicator";
+import { PushToTalkButton } from "../components/PushToTalkButton";
 import { TranscriptView } from "../components/TranscriptView";
 import { useIntakeRoom } from "../lib/livekit";
 
@@ -22,11 +23,15 @@ export function Intake() {
     agentSpeaking,
     patientSpeaking,
     micPublished,
+    recording,
     connect,
     disconnect,
+    pttDown,
+    pttUp,
   } = useIntakeRoom();
 
   const connected = status === "connected";
+  const pttDisabled = completed || handoff || Boolean(urgent) || agentSpeaking;
 
   return (
     <div className="intake">
@@ -69,11 +74,13 @@ export function Intake() {
               patientSpeaking={patientSpeaking}
               micPublished={micPublished}
             />
-            {!micPublished && (
-              <p className="error">
-                Microphone not detected by the app. Allow mic access for this site and click
-                Reconnect.
-              </p>
+            {!completed && !handoff && (
+              <PushToTalkButton
+                recording={recording}
+                disabled={pttDisabled}
+                onDown={pttDown}
+                onUp={pttUp}
+              />
             )}
             {error && <p className="error">{error}</p>}
             <TranscriptView captions={captions} />
