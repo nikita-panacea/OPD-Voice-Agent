@@ -7,8 +7,8 @@ Tools the LLM calls:
   * flag_urgent     — raise the URGENT staff escalation on a red flag
   * complete_intake — finish the session
 
-Guardrails (§2) live both in the prompt (`prompts.py`) and here as code: `save_intake_field`
-refuses to store anything until consent is granted.
+Prerecorded checklist prompts are played deterministically in code (not left to the LLM) so
+each question is asked once, recorded in chat history, and the patient's reply is saved.
 """
 
 from __future__ import annotations
@@ -27,7 +27,7 @@ from agent.prompts import (
 )
 from config.settings import get_settings
 from intake import red_flags, report
-from intake.questions import critical_field_ids, get_field
+from intake.questions import INTAKE_FIELDS, critical_field_ids, get_field
 from intake.prompt_audio import PromptAudioResolver
 from intake.state import IntakeState
 from logging_setup import get_logger
@@ -48,42 +48,62 @@ class IntakeAgent(Agent):
         settings = get_settings()
         self._min_asr_confidence = settings.min_asr_confidence
         self._asr_low_confidence_limit = settings.asr_low_confidence_limit
-        self._low_conf_streak = 0  # consecutive low-confidence (misheard) turns
+        self._low_conf_streak = 0
         self._prompt_audio = PromptAudioResolver()
+        self._played_audio_keys: set[tuple[str, str]] = set()
+        self._pending_field_id: str | None = None  # field we are waiting for an answer on
 
     def bind_room(self, room: rtc.Room) -> None:
         """Give the agent the room handle so it can push live UI updates (set by the worker)."""
         self._room = room
 
     async def on_enter(self) -> None:
-        """Speak first: greet the patient and ask for consent the moment the agent joins.
-
-        Runs automatically when the agent becomes active in the session, so the patient hears
-        the assistant before they say anything.
-        """
+        """Greet and play the consent prompt (or fall back to LiveKit TTS)."""
         log.info("agent_on_enter_greeting", session=self._state.session_id, language=self._language)
-        if await self._try_play_predefined_prompt("consent"):
-            return
+        if await self._play_field_prompt("consent"):
+            raise StopResponse
         await self.session.generate_reply(instructions=greeting_instructions(self._language))
-
     async def _publish(self, payload: dict) -> None:
-        """Send a JSON data message to the patient's browser (live field panel)."""
         if self._room is None:
             return
         try:
             await self._room.local_participant.publish_data(
                 json.dumps(payload).encode("utf-8"), topic=DATA_TOPIC
             )
-        except Exception as exc:  # noqa: BLE001 - UI update is best-effort
+        except Exception as exc:  # noqa: BLE001
             log.warning("publish_data_failed", error=str(exc))
 
-    async def _try_play_predefined_prompt(
-        self, field_id: str, variant: str = "prompt"
-    ) -> bool:
-        """Ask the browser to play a pre-recorded prompt if one exists."""
+    async def _record_spoken_prompt(self, text: str) -> None:
+        """Record a browser-played prompt in chat history so the LLM knows what was asked."""
+        if not text.strip():
+            return
+        new_ctx = self.chat_ctx.copy()
+        new_ctx.add_message(role="assistant", content=text)
+        await self.update_chat_ctx(new_ctx)
+
+    def _next_field_to_ask(self) -> str | None:
+        """Return the next checklist field id to ask, in order (skips consent gate)."""
+        for field in INTAKE_FIELDS:
+            if field.is_consent_gate:
+                continue
+            if field.id not in self._state.fields:
+                return field.id
+            if field.id in critical_field_ids():
+                fv = self._state.fields[field.id]
+                if not fv.confirmed:
+                    return None
+        return None
+
+    async def _play_field_prompt(self, field_id: str, variant: str = "prompt") -> bool:
+        """Play a prerecorded prompt once; set pending field. Returns True if audio was sent."""
+        key = (field_id, variant)
+        if key in self._played_audio_keys:
+            return False
+
         prompt = self._prompt_audio.resolve(field_id, self._language, variant)
         if prompt is None:
             return False
+
         await self._publish(
             {
                 "type": "prompt_audio",
@@ -93,6 +113,9 @@ class IntakeAgent(Agent):
                 "text": prompt.text,
             }
         )
+        await self._record_spoken_prompt(prompt.text)
+        self._played_audio_keys.add(key)
+        self._pending_field_id = field_id
         log.info(
             "prompt_audio_published",
             session=self._state.session_id,
@@ -102,14 +125,13 @@ class IntakeAgent(Agent):
         )
         return True
 
-    def _low_confidence_decision(self, confidence: float | None) -> str | None:
-        """Decide what to do about an STT transcript's confidence (updates the streak).
+    async def _advance_to_next_prompt(self) -> None:
+        """Play the next checklist prompt and stop the LLM turn (wait for patient answer)."""
+        next_id = self._next_field_to_ask()
+        if next_id and await self._play_field_prompt(next_id):
+            raise StopResponse
 
-        Returns "handoff" after too many consecutive low-confidence turns, "repeat" for a single
-        low-confidence turn, or None when the turn is trusted. A confidence of None or 0.0 means
-        the provider didn't report it → treated as unknown (no gating; the prompt sense-check
-        still applies). Pure + stateful → unit-testable.
-        """
+    def _low_confidence_decision(self, confidence: float | None) -> str | None:
         if confidence is None or not (0.0 < confidence < self._min_asr_confidence):
             self._low_conf_streak = 0
             return None
@@ -118,16 +140,7 @@ class IntakeAgent(Agent):
             return "handoff"
         return "repeat"
 
-    # ----------------------------------------------------- per-turn safety + ASR hook
     async def on_user_turn_completed(self, turn_ctx: ChatContext, new_message: ChatMessage) -> None:
-        """Per-utterance guards that run before the LLM replies.
-
-        1. Red-flag screen (§2.2): on a hit, raise URGENT, notify the UI, speak the calm
-           "alert staff" line, and `StopResponse` so the escalation isn't contradicted.
-        2. ASR-confidence gate: if the transcript is low-confidence (likely misheard), ask the
-           patient to repeat instead of acting on garbled speech; after repeated failures, hand
-           off to staff. Both use `StopResponse` so the misheard text is never processed/saved.
-        """
         text = getattr(new_message, "text_content", None) or ""
 
         flag = red_flags.detect(text, self._language)
@@ -137,7 +150,7 @@ class IntakeAgent(Agent):
                 await self._publish({"type": "urgent", "reason": flag.category})
             try:
                 await self.session.say(flag.advice)
-            except Exception as exc:  # noqa: BLE001 - speaking is best-effort
+            except Exception as exc:  # noqa: BLE001
                 log.warning("escalation_say_failed", error=str(exc))
             raise StopResponse
 
@@ -158,53 +171,49 @@ class IntakeAgent(Agent):
             message = repeat_request(self._language)
         try:
             await self.session.say(message)
-        except Exception as exc:  # noqa: BLE001 - speaking is best-effort
+        except Exception as exc:  # noqa: BLE001
             log.warning("asr_say_failed", error=str(exc))
         raise StopResponse
 
-    # ------------------------------------------------------------------ tools
     @function_tool
     async def play_predefined_prompt(
         self, context: RunContext, field_id: str, variant: str = "prompt"
     ) -> str:
-        """Play a known checklist prompt in the browser before using LiveKit TTS.
-
-        Args:
-            field_id: the checklist field id to ask next.
-            variant: "prompt" for the normal question, or "simpler" for a plain re-ask.
-        """
-        if await self._try_play_predefined_prompt(field_id, variant):
+        """Play a checklist prompt clip (usually handled automatically — rarely needed)."""
+        key = (field_id, variant)
+        if key in self._played_audio_keys:
+            pending = self._pending_field_id
+            if pending == field_id:
+                return (
+                    f"Audio for '{field_id}' was already played and you are waiting for the "
+                    f"patient's answer. Do NOT play it again. Call save_intake_field with "
+                    f"field_id='{field_id}' and the patient's latest words as the value."
+                )
+            return (
+                f"Audio for '{field_id}' ({variant}) was already played. Speak with your own "
+                "voice for clarifications or read-backs — do not replay."
+            )
+        if await self._play_field_prompt(field_id, variant):
             raise StopResponse
-        return (
-            f"No pre-recorded audio found for {field_id} ({variant}). "
-            "Ask the patient this question normally now."
-        )
+        return f"No pre-recorded audio for {field_id} ({variant}). Ask with your LiveKit voice."
 
     @function_tool
     async def record_consent(self, context: RunContext, granted: bool) -> str:
-        """Record whether the patient consents to the automated intake.
-
-        Args:
-            granted: True if the patient agreed to continue, else False.
-        """
+        """Record whether the patient consents to the automated intake."""
         self._state.set_consent(granted)
         await self._publish({"type": "consent", "granted": granted})
-        if granted:
+        if not granted:
+            self._pending_field_id = None
             return (
-                "Consent granted. Before asking for chief_complaint, call "
-                "play_predefined_prompt with field_id='chief_complaint' and variant='prompt'. "
-                "If no audio is available, ask normally."
+                "Consent declined. Do not collect any health information. Politely offer to "
+                "connect the patient to hospital staff and end."
             )
-        return (
-            "Consent declined. Do not collect any health information. Politely offer to connect "
-            "the patient to hospital staff and end."
-        )
+        self._pending_field_id = None
+        if await self._play_field_prompt("chief_complaint"):
+            raise StopResponse
+        return "Consent granted. Ask for chief_complaint with your voice."
 
     async def apply_field(self, field_id: str, value: str, confidence: float = 1.0) -> str:
-        """Validate + consent-gate + save + push a field. Returns the LLM-facing message.
-
-        Separated from the tool wrapper so the consent gate is directly unit-testable.
-        """
         if get_field(field_id) is None:
             return f"Unknown field_id '{field_id}'. Use one of the checklist ids."
         if not self._state.consent_given:
@@ -212,66 +221,47 @@ class IntakeAgent(Agent):
 
         self._state.save_field(field_id, value, confidence)
         await self._publish(self._state.field_panel_payload(field_id))
+        if self._pending_field_id == field_id:
+            self._pending_field_id = None
 
         if field_id in critical_field_ids():
             return (
-                f"Saved {field_id}. This is a critical field — read it back to the patient and "
-                "ask them to confirm, then call confirm_field."
+                f"Saved {field_id}. This is a critical field — read it back to the patient "
+                "with your voice and ask them to confirm, then call confirm_field. Do NOT "
+                "replay prerecorded audio for this field."
             )
-        return (
-            f"Saved {field_id}. Continue with the next needed field. Before asking the next "
-            "checklist question, call play_predefined_prompt for that field. If no audio is "
-            "available, ask normally."
-        )
+        return f"Saved {field_id}. Continue to the next field."
 
     @function_tool
     async def save_intake_field(
         self, context: RunContext, field_id: str, value: str, confidence: float = 1.0
     ) -> str:
-        """Save one intake answer. Refuses until consent is granted (the consent gate).
-
-        Args:
-            field_id: the checklist field id (e.g. "chief_complaint").
-            value: the patient's answer, in their own words.
-            confidence: 0.0–1.0, how sure you are you understood correctly.
-        """
-        return await self.apply_field(field_id, value, confidence)
+        """Save one intake answer. Refuses until consent is granted."""
+        msg = await self.apply_field(field_id, value, confidence)
+        if field_id in critical_field_ids():
+            return msg
+        await self._advance_to_next_prompt()
+        return msg
 
     @function_tool
     async def confirm_field(self, context: RunContext, field_id: str) -> str:
         """Mark a critical field as confirmed after the patient verifies the read-back."""
         self._state.confirm_field(field_id)
         await self._publish(self._state.field_panel_payload(field_id))
-        return (
-            f"Confirmed {field_id}. Continue with the next needed field. Before asking the next "
-            "checklist question, call play_predefined_prompt for that field. If no audio is "
-            "available, ask normally."
-        )
+        await self._advance_to_next_prompt()
+        return f"Confirmed {field_id}. Continue to the next field."
 
     @function_tool
     async def flag_urgent(self, context: RunContext, reason: str) -> str:
-        """Raise an URGENT staff escalation for a red-flag symptom.
-
-        Args:
-            reason: short description of the red flag (e.g. "chest pain").
-        """
         self._state.raise_urgent(reason)
         await self._publish({"type": "urgent", "reason": reason})
         return (
             "URGENT flag raised for staff. Calmly tell the patient to alert hospital staff or "
-            "seek immediate help right now. Do not attempt to manage the emergency yourself."
+            "seek immediate help right now."
         )
 
     @function_tool
     async def request_staff_handoff(self, context: RunContext, reason: str) -> str:
-        """Hand off to hospital staff (graceful failure / patient request, §2.6).
-
-        Use when the patient declines consent, asks for a human, or after repeated
-        misunderstandings — do not keep guessing.
-
-        Args:
-            reason: short reason for the handoff (e.g. "repeated ASR failure").
-        """
         self._state.finalize("handoff")
         await self._publish({"type": "handoff", "reason": reason})
         log.info("staff_handoff", session=self._state.session_id, reason=reason)
@@ -282,11 +272,11 @@ class IntakeAgent(Agent):
 
     @function_tool
     async def complete_intake(self, context: RunContext) -> str:
-        """Finish the intake once all required fields are captured."""
         self._state.finalize("completed")
+        self._pending_field_id = None
         try:
             report.generate_and_store(self._state.session_id)
-        except Exception as exc:  # noqa: BLE001 - report is best-effort at completion
+        except Exception as exc:  # noqa: BLE001
             log.warning("report_generation_failed", error=str(exc))
         await self._publish({"type": "complete", "completion_rate": self._state.completion_rate()})
         return (

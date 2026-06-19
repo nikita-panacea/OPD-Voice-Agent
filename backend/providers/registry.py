@@ -147,6 +147,13 @@ def build_session(pipeline_name: str, language: str) -> BuiltSession:
                 min_delay=MIN_ENDPOINTING_DELAY,
                 max_delay=MAX_ENDPOINTING_DELAY,
             ),
+            # Patient barge-in: stop agent TTS when the user speaks; never discard their audio.
+            interruption={
+                "enabled": True,
+                "min_duration": 0.25,
+                "discard_audio_if_uninterruptible": False,
+                "resume_false_interruption": False,
+            },
         ),
     )
 

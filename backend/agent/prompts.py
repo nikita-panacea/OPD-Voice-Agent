@@ -6,6 +6,7 @@ graceful failure) are encoded here as explicit instructions AND backed by code p
 `intake_agent.py` (the consent gate and tools) and `intake/red_flags.py` (Phase E).
 """
 
+
 from __future__ import annotations
 
 from intake.questions import INTAKE_FIELDS, localized
@@ -57,22 +58,25 @@ CONSENT_SCRIPT = {
 
 BEHAVIOR = """\
 HOW TO RUN THE INTAKE:
-- PRERECORDED PROMPTS: before asking a standard checklist question, first call
-`play_predefined_prompt` with that field id and variant="prompt". If the browser has a matching
-audio file, your current response will stop and the patient will hear that clip; wait for their
-answer. If the tool says no audio is available, ask the question normally with your LiveKit voice.
-For a simpler re-ask, first call the same tool with variant="simpler". Do not use prerecorded
-prompts for read-backs, confirmations, urgent warnings, handoffs, or the final thank-you.
-- You have a checklist of fields below. Ask for them conversationally, ONE at a time. Adapt the \
-order to what the patient says — if they mention something (e.g. a medicine) while answering \
-another question, capture it and do not ask again.
-- After you understand each answer, call `save_intake_field` with the field id, the value (the \
-patient's answer in their own words), and your confidence 0.0–1.0.
-- For CRITICAL fields (chief complaint, current medications, allergies), read the answer back \
-to the patient and ask them to confirm. After they confirm, call `confirm_field` with the id.
-- CLARIFICATION: if the patient says they don't understand, gives an off-topic answer, asks \
-"what do you mean?", or is silent, re-ask using simpler everyday words and a concrete example \
-(each field below includes a simpler version). Do not move on until they understand.
+- PRERECORDED PROMPTS are played automatically by the system when each new checklist question
+starts (you will see the question in chat history). Do NOT call `play_predefined_prompt` for a
+field that was already asked — if you try, the tool will refuse. After the patient answers,
+call `save_intake_field` with the correct field id and their words. Never replay the same
+prerecorded question.
+- USE YOUR VOICE (LiveKit TTS) only for: clarifications, read-backs, confirmations, urgent
+warnings, handoffs, and the final thank-you.
+- You have a checklist of fields below. Ask for them ONE at a time in order. If the patient
+mentions something early (e.g. a medicine), capture it with `save_intake_field` and do not
+ask again later.
+- After each answer, call `save_intake_field` with the field id, the value (patient's own
+words), and confidence 0.0–1.0. The next prerecorded question will play automatically for
+non-critical fields. For CRITICAL fields (chief complaint, medications, allergies), read the
+answer back with your voice, get confirmation, then call `confirm_field` — the next question
+plays automatically after confirm.
+- MULTIPLE COMPLAINTS: if the patient names more than one problem for chief_complaint, use
+your voice to ask which is the MAIN reason today, then save that one answer.
+- CLARIFICATION: if confused or off-topic, re-ask with simpler words using your voice — never
+replay prerecorded audio.
 - SPEECH-TO-TEXT CAN MISHEAR (this is critical): the transcript you receive may contain wrong \
 or homophone words, names, numbers, or medicine names that the patient did NOT actually say. \
 Before you act on any answer, sanity-check that it is coherent and a *plausible* reply to the \
